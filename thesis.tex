@@ -44,23 +44,6 @@
 % 载入参考文献数据库（注意不要省略“.bib”）。
 \addbibresource{thesis.bib}
 
-% 普通用户可删除此段。
-\usepackage{color}
-\def\pkuthssffaq{%
-	\emph{\textcolor{red}{pkuthss 文档模版最常见问题：}}
-
-	\texttt{\string\cite}、\texttt{\string\parencite} %
-	和 \texttt{\string\supercite} 三个命令分别产生%
-	未格式化的、带方括号的和上标且带方括号的引用标记：%
-	\cite{test-en}，\parencite{test-zh}、\supercite{test-en, test-zh}。
-
-	若要避免章末空白页，请在调用 pkuthss 文档类时加入 \texttt{openany} 选项。
-
-	如果编译时不出参考文献，
-	请参考 \texttt{texdoc pkuthss}“问题及其解决”一章
-	“其它可能存在的问题”一节中关于 biber 的说明。
-}
-
 \begin{document}
 	% 以下为正文之前的部分，默认不进行章节编号。
 	\frontmatter
@@ -86,15 +69,14 @@
 
 	% 以下为正文部分，默认要进行章节编号。
 	\mainmatter
-	% 序言。
+	% 各个章节
 	\include{chap/introduction}
-	% 各章节。
-	\include{chap/chap1}
-	% 结论。
+	\include{chap/related-work}
+	\include{chap/bitstream-extraction}
+	\include{chap/rate-adapation}
+	\include{chap/decoder-optimization}
 	\include{chap/conclusion}
 
-	% 正文中的附录部分。
-	\appendix
 	% 排版参考文献列表。
 	\printbibliography[
 		% 使“参考文献”出现在目录中；如果同时要使参考文献列表参与章节编号，
@@ -109,14 +91,12 @@
 		% 详见 biblatex-caspervector 的文档。
 		sorting = ecnty
 	]
-	% 各附录。
-	\include{chap/encl1}
 
 	% 以下为正文之后的部分，默认不进行章节编号。
 	\backmatter
 	% 致谢。
 	\include{chap/acknowledge}
-	% 原创性声明和使用授权说明。
+	\include{chap/achievement}
 	\include{chap/originauth}
 \end{document}
 
