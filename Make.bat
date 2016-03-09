@@ -7,7 +7,7 @@
 @rem Public domain.
 
 set JOBNAME=thesis
-@rem Õâ¸ö±äÁ¿µÄÖµ¿ÉÒÔÎª latex »ò pdflatex¡£
+@rem è¿™ä¸ªå˜é‡çš„å€¼å¯ä»¥ä¸º latex æˆ– pdflatexã€‚
 set LATEX=pdflatex
 set BIBTEX=biber -l zh__pinyin
 set DVIPDF=dvipdfmx
