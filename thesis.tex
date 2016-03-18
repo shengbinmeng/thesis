@@ -19,18 +19,9 @@
 % 编译工具用xelatex。
 %\documentclass[UTF8, fontset = mac]{pkuthss}
 
-% 使用 biblatex 排版参考文献，并规定其格式（详见 biblatex-caspervector 的文档）。
-% 这里按照英文文献在前，中文文献在后排序（“sorting = ecnty”）；
-% 若需按照中文文献在前，英文文献在后排序，请设置“sorting = centy”；
-% 若需按照引用顺序排序，请设置“sorting = none”。
-\usepackage[backend = biber, style = caspervector, utf8, sorting = none]{biblatex}
-% 在OS X上“style = caspervector, utf8”选项会导致错误，可禁用之。
-%\usepackage[backend = biber, sorting = none]{biblatex}
-
-% 按学校要求设定参考文献列表中的条目之内及之间的距离。
-\setlength{\bibitemsep}{3bp}
-% 对于 linespread 值的计算过程有兴趣的同学可以参考 pkuthss.cls。
-\renewcommand*{\bibfont}{\zihao{5}\linespread{1.27}\selectfont}
+% 采用BibTex处理参考文献
+\usepackage{cite}
+\newcommand{\supercite}[1]{$^{\mbox{\scriptsize \cite{#1}}}$}
 
 % 设定文档的基本信息。
 \pkuthssinfo{
@@ -46,8 +37,6 @@
 	cmentor = {郭宗明\ 研究员}, ementor = {Prof.\ Zongming Guo},
 	ckeywords = {视频流媒体，码流截取，码率自适应，解码优化}, ekeywords = {Video streaming, Bitstream extraction, Rate adaptation, Decoding optimization}
 }
-% 载入参考文献数据库（注意不要省略“.bib”）。
-\addbibresource{thesis.bib}
 
 \begin{document}
 	% 以下为正文之前的部分，默认不进行章节编号。
@@ -83,11 +72,9 @@
 	\include{chap/conclusion}
 
 	% 排版参考文献列表。
-	\printbibliography[
-		% 使“参考文献”出现在目录中；如果同时要使参考文献列表参与章节编号，
-		% 可将“bibintoc”改为“bibnumbered”。
-		heading = bibintoc
-	]
+	\addcontentsline{toc}{chapter}{参考文献}
+	\bibliographystyle{chinese}
+	\bibliography{thesis}
 
 	% 以下为正文之后的部分，默认不进行章节编号。
 	\backmatter
