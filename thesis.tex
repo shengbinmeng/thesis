@@ -22,6 +22,7 @@
 % 采用BibTex处理参考文献
 \usepackage{cite}
 \newcommand{\supercite}[1]{$^{\mbox{\scriptsize \cite{#1}}}$}
+\newcommand{\wuhao}{\fontsize{10.5pt}{10.5pt}\selectfont}    % 五号, 单倍行距
 
 % 设定文档的基本信息。
 \pkuthssinfo{
@@ -73,6 +74,7 @@
 
 	% 排版参考文献列表。
 	\addcontentsline{toc}{chapter}{参考文献}
+	\wuhao
 	\bibliographystyle{chinese}
 	\bibliography{thesis}
 
