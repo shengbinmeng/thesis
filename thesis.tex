@@ -19,10 +19,17 @@
 % 编译工具用xelatex。
 %\documentclass[UTF8, fontset = mac]{pkuthss}
 
-% 采用BibTex处理参考文献
+% 采用BibTex处理参考文献。
 \usepackage{cite}
 \newcommand{\supercite}[1]{$^{\mbox{\scriptsize \cite{#1}}}$}
 \newcommand{\wuhao}{\fontsize{10.5pt}{10.5pt}\selectfont}    % 五号, 单倍行距
+
+% 排版表格所需的包
+\usepackage{makecell}
+\usepackage{multirow}
+% 算法伪码所需的包
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
 % 设定文档的基本信息。
 \pkuthssinfo{
