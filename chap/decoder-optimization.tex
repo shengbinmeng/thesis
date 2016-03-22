@@ -10,7 +10,7 @@ HEVC标准化组织提供的参考软件HM中包含了一个HEVC解码器的实�
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width = 1.0\linewidth]{eps/decoding_workflow}\\
+	\includegraphics[width = 1.0\linewidth]{eps/decoding_workflow}
 	\caption{\label{fig:decoding_workflow}新的解码器原型流程框架}
 \end{figure}
 
@@ -32,7 +32,7 @@ HEVC标准化组织提供的参考软件HM中包含了一个HEVC解码器的实�
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width = 1.0\linewidth]{eps/vertical_DF_to_horizontal_edge}\\
+	\includegraphics[width = 1.0\linewidth]{eps/vertical_DF_to_horizontal_edge}
 	\caption{\label{fig:vertical_DF_to_horizontal_edge}HEVC中对$8 \times 8$块的水平边界进行滤波的操作示意图}
 \end{figure}
 
@@ -58,28 +58,40 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 \begin{figure}[!tp]
 	\centering
-	\includegraphics[width = 0.9\linewidth]{eps/SAO_edge_direction}\\
+	\includegraphics[width = 0.9\linewidth]{eps/SAO_edge_direction}
 	\caption{\label{fig:SAO_edge_direction}HEVC中的SAO在边缘模式下选取相邻像素的4种方向}
 \end{figure}
 
 \begin{figure}[!tp]
 	\centering
-	\includegraphics[width = 0.95\linewidth]{eps/SAO_edge_parallel_index}\\
+	\includegraphics[width = 0.95\linewidth]{eps/SAO_edge_parallel_index}
 	\caption{\label{fig:SAO_edge_parallel_index}HEVC中的SAO在边缘模式下的得到16个符号值的过程}
 \end{figure}
 
+综上，在我们所提出的解码器原型基础上，SIMD优化算法被用于提高大多数耗时解码模块的运行效率。在下一节中，我们将给出一个基于帧的并行解码框架，作为解码器优化的最后一步。
 
 \section{帧级并行解码}
 
-本文提出的帧级并行解码框架如图\ref{fig:parallel_decoding_framework}所示。
-
 \begin{figure}[!tp]
 	\centering
-	\includegraphics[width = 0.9\linewidth]{eps/parallel_decoding_framework}\\
+	\includegraphics[width = 0.8\linewidth]{eps/parallel_decoding_framework}
 	\caption{\label{fig:parallel_decoding_framework}HEVC帧级并行解码框架图}
 \end{figure}
 
+随着多核处理器的普及，并行算法成为了发挥这些处理器能力的必需。在本节中，我们提出了一个帧级的并行解码框架，可以在通过多线程取得几倍的解码加速比。该框架如图\ref{fig:parallel_decoding_framework}所示，其工作流程说明如下：
+\begin{enumerate}
+	\item 首先是解码器初始化；然后在收到码流数据时，入口线程（即主线程）调度第一个可用线程开始解码。
+	\item 当第一个可用线程收到码流后，它立即完成slice解码（即图\ref{fig:decoding_workflow}中的S2阶段），并先向主线程发送解码上下文准备好的信号，然后才进入CTU解码循环（即图\ref{fig:decoding_workflow}中的S3阶段）。
+	\item 主线程收到解码上下文准备好的信号后，它会把解码上下文信息拷贝到其他可用线程，并调度它们并行地开始后续帧的CTU解码循环。
+\end{enumerate}
+
+从该流程和\ref{fig:parallel_decoding_framework}可以看出，所谓的并行任务指的是不同帧的CTU解码循环及CTU解码过程可以并发地执行，但高层语法和每一帧的slice解码阶段还是需要按照特定的顺序进行。
+
+在本文提出的帧级并行解码框架中，帧内预测的帧是相对独立的，其解码过程与单线程一样。但对于帧间预测的帧，由于运动校正依赖于参考帧的重建像素，所以必须设立线程同步机制。为了平衡同步开销和并发任务的粒度，该框架使用了像素行级别的同步点。对每一帧，有一个变量用于指示该帧的哪一行已经完成解码重建。参考它的帧通过不断检查这一变量，就能在其所依赖的像素行准备好后立即开始进行运动校正。这样的设计用较小的开销解决了解码中的数据依赖问题，提高了潜在的并行度。
+
 \section{优化结果}
+
+在本节中，我们通过详尽的解码速度测试数据来展示优化结果。
 
 \section{本章小结}
 
