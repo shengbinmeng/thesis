@@ -9,7 +9,7 @@
 set JOBNAME=thesis
 @rem 这个变量的值可以为 latex 或 pdflatex。
 set LATEX=pdflatex
-set BIBTEX=biber -l zh__pinyin
+set BIBTEX=bibtex
 set DVIPDF=dvipdfmx
 
 if "%LATEX%"=="latex" (set DODVIPDF=%DVIPDF% %JOBNAME%

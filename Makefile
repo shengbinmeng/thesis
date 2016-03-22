@@ -8,7 +8,7 @@
 JOBNAME = thesis
 # 这个变量的值可以为 latex、pdflatex 或 xelatex。
 LATEX = xelatex
-BIBTEX = biber -l zh__pinyin
+BIBTEX = bibtex
 DVIPDF = dvipdfmx
 
 # 如果用 LaTeX 编译，则使用 dvipdfmx 将 dvi 转成 pdf。
