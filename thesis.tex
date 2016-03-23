@@ -27,6 +27,10 @@
 % 排版表格所需的包
 \usepackage{makecell}
 \usepackage{multirow}
+\usepackage{colortbl}
+% 使用&\tabincell{c}{}&可在单元格中自动换行
+\newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
+
 % 算法伪码所需的包
 \usepackage{algorithm}
 \usepackage{algorithmic}
