@@ -95,6 +95,7 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 	\caption{\label{fig:SAO_edge_parallel_index}HEVC中的SAO在边缘模式下的得到16个符号值的过程}
 \end{figure}
 
+
 综上，在我们所提出的解码器原型基础上，SIMD优化算法被用于提高大多数耗时解码模块的运行效率。在下一节中，我们将给出一个基于帧的并行解码框架，作为解码器优化的最后一步。
 
 \section{帧级并行解码框架}
@@ -118,9 +119,9 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 \section{优化结果}
 
-在本节中，我们通过详尽的解码速度测试数据来展示优化结果。
+在本节中，我们通过详尽的解码速度测试数据来展示整体优化结果。
 
-对于x86架构平台，我们选用了Intel i7-2600 3.4GHz四核处理器，机器内存8GB，操作系统为Microsoft Windows 7。HEVC标准测试序列用HM 10.0编码器编码，重要的编码配置参见表\ref{table:HM_config}。
+对于x86架构平台，我们选用了Intel i7-2600 3.4GHz四核处理器，机器内存8GB，操作系统为Microsoft Windows 7。HEVC标准测试序列用HM 10编码器编码，重要的编码配置参见表\ref{table:HM_config}。
 
 \begin{table}[h]
 	\begin{center}
@@ -155,7 +156,7 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 	\end{center}
 \end{table}
 
-为了得到不同码率的码流，我们采用了四个QP值：23、28、33、38。对于每一个QP值和每一个测试序列，编出的码流分别用本文所实现的解码器、HM参考软件中的解码器、业界知名的多媒体框架FFmpeg\footnote{http://ffmpeg.org}中的解码器进行解码，比较三者的解码帧率。我们的解码器和HM都是用Microsoft Studio 2008编译得到，而FFmpeg是从网上下载的可执行文件\footnote{http://ffmpeg.zeranoe.com/builds/}。标准测试集中的A类（2560x1600）和B类（1920x1080）序列的测试结果参见表\ref{table:decoding_speed_x86}。从中可以看出，在四线程解码时，我们的解码器相比于HM 10.0有平均13.21倍的速度提升。FFmpeg虽然也比HM 10.0高效得多，但其性能只有我们的三分之一不到。帧级并行编码框架的有效性可以从多线程比单线程的加速比体现出来。我们的解码器4线程比单线程速度提高了2.15倍（13.21/6.13），而FFmpeg的4线程只比单线程速度提高了1.65倍（3.59/2.18）。
+为了得到不同码率的码流，我们采用了四个QP值：23、28、33、38。对于每一个QP值和每一个测试序列，编出的码流分别用本文所实现的解码器、HM参考软件中的解码器、业界知名的多媒体框架FFmpeg\footnote{http://ffmpeg.org}中的解码器进行解码，比较三者的解码帧率。我们的解码器和HM都是用Microsoft Studio 2008编译得到，而FFmpeg是从网上下载的可执行文件\footnote{http://ffmpeg.zeranoe.com/builds/}。标准测试集中的A类（2560x1600）和B类（1920x1080）序列的测试结果参见表\ref{table:decoding_speed_x86}。表中的加速比都是相对于HM计算得到的结果。从中可以看出，在四线程解码时，我们的解码器相比于HM 10.0有平均13.21倍的速度提升，FFmpeg虽然也比HM 10高效得多，但其性能只有我们的三分之一不到。我们的解码器相对于FFmpeg的加速比在单线程和多线程下分别为6.13/2.18=2.81和13.21/3.59=3.68。帧级并行编码框架的有效性可以从多线程比单线程的加速比体现出来。我们的解码器4线程比单线程速度提高了2.15倍（13.21/6.13），而FFmpeg的4线程只比单线程速度提高了1.65倍（3.59/2.18）。
 
 \begin{table}
 	\begin{center}
