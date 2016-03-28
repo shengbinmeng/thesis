@@ -22,7 +22,36 @@ HEVC标准化组织提供的参考软件HM中虽然包含了一个HEVC解码器�
 
 大多数现代通用处理器都有SIMD扩展指令集，例如x86架构上的MMX、3DNow!、SSEx、AVX等\supercite{Intel-manual}，以及ARM架构上的NEON\supercite{ARM-manual}。这类指令集中的一条指令可以同时操作位于特殊向量寄存器中的多个数据，能成倍地提高数据吞吐率。在这一节中，我们用SIMD技术来加速HEVC解码中的几个耗时模块。
 
-根据对HEVC复杂度的分析\supercite{Bossen-TCSVT2012,Yan-VCIP2012}，解码中耗时较多且适合用SIMD来优化的几个模块包括：运动校正、变换、去块滤波和采样自适应偏移。其中运动校正和变换已经在Yan等人的工作\supercite{Yan-VCIP2012}中被充分地优化过了，本文直接采用其结果。而对于已有工作尚未很好处理的去块滤波和采样自适应偏移，我们将分别设计新的算法对其进行加速。下面介绍的算法对x86架构和ARM架构都适用，在具体实现上有差异的地方我们会单独指出。
+\begin{table}
+	\begin{center}
+		\caption{HEVC解码过程中各个模块的时间占比} \label{table:HEVC_timing}
+		\renewcommand{\arraystretch}{1.5}
+		\begin{tabular}{c|c}
+			\hline
+			\textbf{解码模块} & \textbf{时间占比} \\
+			\hline
+			\hline
+			运动校正 & $47.88\%$ \\
+			\hline
+			反变换 & $14.5\%$ \\
+			\hline
+			熵解码 & $12\%$ \\
+			\hline
+			去块滤波 & $7.76\%$ \\
+			\hline
+			采样自适应偏移 & $5.12\%$ \\
+			\hline
+			内存操作 & $5\%$ \\
+			\hline
+			反量化 & $2.24\%$ \\
+			\hline
+			其他 & $5.5\%$ \\
+			\hline
+		\end{tabular}
+	\end{center}
+\end{table}
+
+根据对HEVC解码过程时间分布的测量统计\supercite{Duan2014}，较高码率的码流在解码中各个模块的时间消耗比例如表\ref{table:HEVC_timing}所示。其中耗时较多且适合用SIMD来优化的几个模块包括：运动校正、反变换、去块滤波和采样自适应偏移（熵解码虽然耗时较多，但不适合用SIMD技术进行优化；而且据我们所知没有很好的加速方法）。这几个模块中，运动校正和反变换已经在Yan等人的工作\supercite{Yan-VCIP2012}中被充分地优化过了，本文直接采用其结果；而对于已有工作尚未很好处理的去块滤波和采样自适应偏移，我们将分别设计新的算法对其进行加速。下面介绍的算法对x86架构和ARM架构都适用，在具体实现上有差异的地方我们会单独指出。
 
 \subsection{对称去块滤波算法}
 
@@ -270,7 +299,7 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 	\end{center}
 \end{table}
 
-在ARM架构处理器上我们也做了类似的对比实验。由于HM不提供ARM版的编译，FFmpeg是我们能找到的最好的对比对象。我们的解码器实现和FFmpeg的ARM版本都是由GCC4.8编译得到。测试设备使用的是Google Galaxy Nexus智能手机。该设备的处理器是OMAP4460 1.2GHz双核Cortex-A9，内存为1GB，操作系统是Android 4.0。考虑到移动端的实际应用情况，我们在ARM上的测试序列选用了更低分辨率的序列，且只测试了较低码率的码流。实验结果具体参见表\ref{table:decoding_speed_ARM}。可以看到，本文所实现的解码器能够在常见的双核移动处理器上平均解码速度是FFmpeg的2.76倍，对于720p视频每秒能解33~52帧，足以实现高清视频的实时解码。
+在ARM架构处理器上我们也做了类似的对比实验。由于HM不提供ARM版的编译，FFmpeg是我们能找到的最好的对比对象。我们的解码器实现和FFmpeg的ARM版本都是由GCC4.8编译得到。测试设备使用的是Google Galaxy Nexus智能手机。该设备的处理器是OMAP4460 1.2GHz双核Cortex-A9，内存为1GB，操作系统是Android 4.0。考虑到移动端的实际应用情况，我们在ARM上的测试序列选用了更低分辨率的序列，且只测试了较低码率的码流。实验结果具体参见表\ref{table:decoding_speed_ARM}。可以看到，本文所实现的解码器能够在常见的双核移动处理器上平均解码速度是FFmpeg的2.76倍，对于720p视频每秒能解（33～52）帧，足以实现高清视频的实时解码。
 
 \begin{table}
 	\begin{center}
