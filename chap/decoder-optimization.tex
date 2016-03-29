@@ -53,6 +53,144 @@ HEVC标准化组织提供的参考软件HM中虽然包含了一个HEVC解码器�
 
 根据对HEVC解码过程时间分布的测量统计\supercite{Duan2014}，较高码率的码流在解码中各个模块的时间消耗比例如表\ref{table:HEVC_timing}所示。其中耗时较多且适合用SIMD来优化的几个模块包括：运动校正、反变换、去块滤波和采样自适应偏移（熵解码虽然耗时较多，但不适合用SIMD技术进行优化；而且据我们所知没有很好的加速方法）。这几个模块中，运动校正和反变换已经在Yan等人的工作\supercite{Yan-VCIP2012}中被充分地优化过了，本文直接采用其结果；而对于已有工作尚未很好处理的去块滤波和采样自适应偏移，我们将分别设计新的算法对其进行加速。下面介绍的算法对x86架构和ARM架构都适用，在具体实现上有差异的地方我们会单独指出。
 
+\subsection{低复杂度运动补偿插值算法}
+
+在HEVC中，运动补偿的实质是水平和竖直方向的插值操作，每个方向的插值过程均采用8抽头DCT插值滤波器插值得到目标亮度分量，并采用4抽头DCT插值滤波器插值得到目标色度分量。无论是水平还是竖直方向的插值，DCT插值滤波器的插值过程均可表示为如下形式：
+\begin{equation}\label{equ:formula-DCT-IF}
+Component_{luma} = \sum_{m=0}^7 p_m \times L_m \quad \texttt{以及} \quad Component_{chroma} = \sum_{m=0}^3 q_m \times C_m,
+\end{equation}
+其中$L_0 - L_7$和$C_0 - C_3$分别代表亮度与色度的原始输入像素，$p_0 - p_7$和$q_0 - q_3$分别代表相应的滤波器系数组 (groups of interpolation coefficients) 。对于亮度分量，运动补偿插值的精度为$1/4$像素，对于色度分量，运动补偿插值的精度为$1/8$像素，因此不论是水平还是竖直方向插值，与其精度相对，亮度分量有$4$个不同的位置，色度分量则有$8$个不同的位置。以水平插值为例，亮度分量与色度分量各自的位置分别如图\ref{fig:luma_position}和图\ref{fig:chroma_position}所示，其对应的插值系数组如表\ref{table:coeff_position}所示。根据式(\ref{equ:formula-DCT-IF})和表\ref{table:coeff_position}，无论水平还是竖直方向插值，得到一个亮度分量需要执行多达$72$次乘法操作，代表了运动补偿中主要的耗时来源。
+
+\begin{table}[!tp]
+	\begin{center}
+		\caption{HEVC运动补偿的插值系数组} \label{table:coeff_position}
+		\renewcommand{\arraystretch}{1.3}
+		\begin{tabular}{c|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}}
+			\hline
+			\textbf{亮度分量位置} & \textbf{$p_0$} & \textbf{$p_1$} & \textbf{$p_2$} & \textbf{$p_3$} & \textbf{$p_4$} & \textbf{$p_5$} & \textbf{$p_6$} & \textbf{$p_7$} \\
+			\hline
+			\hline
+			$L_3$ & $0$ & $0$ & $0$ & $64$ & $0$ & $0$ & $0$ & $0$ \\
+			\hline
+			$a$ & $-1$ & $4$ & $-10$ & $58$ & $17$ & $-5$ & $1$ & $0$ \\
+			\hline
+			$b$ & $-1$ & $4$ & $-11$ & $40$ & $40$ & $-11$ & $4$ & $-1$ \\
+			\hline
+			$c$ & $0$ & $1$ & $-5$ & $17$ & $58$ & $-10$ & $4$ & $-1$ \\
+			\hline
+			\hline
+			\textbf{色度分量位置} & \multicolumn{2}{|c|}{\textbf{$q_0$}} & \multicolumn{2}{c}{\textbf{$q_1$}} & \multicolumn{2}{|c|}{\textbf{$q_2$}} & \multicolumn{2}{c}{\textbf{$q_3$}} \\
+			\hline
+			\hline
+			$C_1$ & \multicolumn{2}{|c|}{\textbf{$0$}} & \multicolumn{2}{c}{\textbf{$64$}} & \multicolumn{2}{|c|}{\textbf{$0$}} & \multicolumn{2}{c}{\textbf{$0$}} \\
+			\hline
+			$d$ & \multicolumn{2}{|c|}{\textbf{$-2$}} & \multicolumn{2}{c}{\textbf{$58$}} & \multicolumn{2}{|c|}{\textbf{$10$}} & \multicolumn{2}{c}{\textbf{$-2$}} \\
+			\hline
+			$e$ & \multicolumn{2}{|c|}{\textbf{$-4$}} & \multicolumn{2}{c}{\textbf{$54$}} & \multicolumn{2}{|c|}{\textbf{$16$}} & \multicolumn{2}{c}{\textbf{$-2$}} \\
+			\hline
+			$f$ & \multicolumn{2}{|c|}{\textbf{$-6$}} & \multicolumn{2}{c}{\textbf{$46$}} & \multicolumn{2}{|c|}{\textbf{$28$}} & \multicolumn{2}{c}{\textbf{$-4$}} \\
+			\hline
+			$g$ & \multicolumn{2}{|c|}{\textbf{$-4$}} & \multicolumn{2}{c}{\textbf{$36$}} & \multicolumn{2}{|c|}{\textbf{$36$}} & \multicolumn{2}{c}{\textbf{$-4$}} \\
+			\hline
+			$h$ & \multicolumn{2}{|c|}{\textbf{$-4$}} & \multicolumn{2}{c}{\textbf{$28$}} & \multicolumn{2}{|c|}{\textbf{$46$}} & \multicolumn{2}{c}{\textbf{$-6$}} \\
+			\hline
+			$i$ & \multicolumn{2}{|c|}{\textbf{$-2$}} & \multicolumn{2}{c}{\textbf{$16$}} & \multicolumn{2}{|c|}{\textbf{$54$}} & \multicolumn{2}{c}{\textbf{$-4$}} \\
+			\hline
+			$j$ & \multicolumn{2}{|c|}{\textbf{$-2$}} & \multicolumn{2}{c}{\textbf{$10$}} & \multicolumn{2}{|c|}{\textbf{$58$}} & \multicolumn{2}{c}{\textbf{$-2$}} \\
+			\hline
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\begin{figure}[!tp]
+	\centering
+	\includegraphics[width = 0.95\linewidth]{eps/luma_position}
+	\caption{\label{fig:luma_position}
+		HEVC运动补偿亮度分量水平插值采用的8抽头DCT插值滤波器}
+	% \vspace{5pt}
+\end{figure}
+
+\begin{figure}[!tp]
+	\centering
+	\includegraphics[width = 0.95\linewidth]{eps/chroma_position}
+	\caption{\label{fig:chroma_position}
+		HEVC运动补偿色度分量水平插值采用的4抽头DCT插值滤波器}
+	% \vspace{5pt}
+\end{figure}
+
+DCT插值滤波的过程是典型的向量乘法，针对水平和竖直方向插值的不同特点，本文提出了不同的SIMD数据级并行算法来实现降低运动补偿乘法的复杂度的优化目的。水平插值的算法实现是建立在本文之前的工作的基础上，该方案以极高的寄存器利用率可达到同时插值多达8个亮度分量的并发度，算法的核心部分如图\ref{fig:DCT-IF_luma}所示，其流程如下。首先滤波器系数组$p_0 - p_7$分两次载入向量寄存器$R_0$，然后将原始像素$L_0 - L_{14}$载入向量寄存器$R_1$。为了最大化寄存器利用率，$R_1$中的15个像素以交织排列的方式载入向量寄存器$R_2 - R_5$，从而仅使用4条PMADDUBSW指令、3条PHADDW指令以及1条MOVDQA指令即可在寄存器$R_2$中同时得到8个插值完毕的16比特亮度分量，平均到每个亮度分量的插值仅需要$1/2$条PSHUFB指令、$1/2$条PMADDUBSW指令、$3/8$条PHDDW指令以及$1/8$对load/store操作，使得指令数目以及访存次数均得到了有效控制。
+
+对于竖直方向的插值算法，PMADDUBSW指令不再适用，在本文之前的工作中，采用了迭代进行乘法与加法的直观算法，在这种情况下得到一个插值完毕的亮度分量平均需要$1$条乘法指令与$7/8$条加法指令。而本文则提出了全新的无乘法SIMD运动补偿的竖直方向插值算法设计方案，能够进一步减少指令执行周期并且实现多达16个亮度分量的同时插值。新算法的基本设计思想是从向量乘法中抽取可最大限度重用的公共运算单元，并借助公共运算单元将向量乘法拆分成最小的加法、减法和移位运算集合。举例来说，针对亮度分量位置$a$与$b$的DCT插值滤波操作可被重构为：
+\begin{eqnarray}
+component_{luma,a} &=& T_0 + ((T_0+L_1)<<2) + (L_3<<5)
+\nonumber 
+\\&& + L_4 + ((L_3+L_4)<<4)- L_0 + L_6,
+\end{eqnarray}
+以及
+\begin{eqnarray}
+component_{luma,b} &=& ((L_1+L_6)<<2) - (L_0+L_7)
+\nonumber 
+\\&& - T_1 + T_2 + (T_2<<2),
+\end{eqnarray}
+其中，$T_0 = ((L_3 - L_2)<<1)$，$T_1 = L_2 + L_5$，$T_2 = ((L_2 + L_5)<<3) - (T_1<<1)$ 均为公共运算单元。类似地，针对色度分量位置$d$、$e$、$f$与$g$的DCT插值滤波操作可被重构为：
+\begin{eqnarray}
+component_{chroma,d} &=& (C_1<<4) + (C_1<<5) + (T_3<<3)
+\nonumber 
+\\&& + ((T_3 - C_0 - C_3)<<1),
+\end{eqnarray}
+\begin{eqnarray}
+component_{chroma,e} &=& (C_1<<5) + ((C_1+C_2)<<4) 
+\nonumber 
+\\&& + ((C_1-C_0)<<2) + ((C_1-C_3)<<1),
+\end{eqnarray}
+\begin{eqnarray}
+component_{chroma,f} &=& (C_1<<3) + ((C_1+C_2)<<5) 
+\nonumber 
+\\&& + (T_1<<4) + ((T_4-C_2-C_3)<<2),
+\end{eqnarray}
+以及
+\begin{equation}
+component_{chroma,g} = (T_3<<5) + ((T_3-C_0-C_3)<<2), 
+\end{equation}
+其中$T_3 = C_1 + C_2$以及$T_4 = C_1 - C_0$均为公共运算单元。对于亮度分量位置$c$以及色度分量位置$h$、$i$、$j$，其重构成公共运算单元最小运算集合的方法分别与亮度分量位置$a$以及色度位置分量位置$f$、$e$、$d$完全对称。此处不再赘述。对于亮度分量位置$L_1$和色度分量位置$C_1$，采用最简单的移位运算代替乘法运算即可。采用上述的新算法之后，为了获得一个位置为$a$或$c$插值完毕的亮度分量平均仅需要$1/2$条移位指令、$3/8$条减法指令以及$7/8$条加法指令，而对于位置为$b$的插值完毕的每个亮度分量平均仅需要$1/2$条移位指令、$3/8$条减法指令以及$3/4$条加法指令。与之前工作中直观的SIMD算法相比，无论是指令数目还是指令的复杂度均有所下降，因此整体的指令执行周期得到了进一步的优化。类似的结论也可通过对色度分量的插值运算的分析而得到。
+
+\begin{figure}[!tp]
+	\centering
+	\includegraphics[width = 0.95\linewidth]{eps/DCT-IF_luma}
+	\caption{\label{fig:DCT-IF_luma}
+		低复杂度运动补偿的水平插值算法，实现8个亮度分量的并行插值}
+	% \vspace{5pt}
+\end{figure}
+
+综上所述，通过本节提出的全新SIMD数据级并行算法，运动补偿模块的水平插值与竖直方向插值运算的并行度得到了大幅提升，并且指令执行周期和访存次数进一步缩减，预期将取得显著的加速比，从而为整个解码流程节省可观的执行时间。
+
+\subsection{无转置反变换算法}\label{sec:6.3.4}
+在H.265/HEVC中，整数变换的实质依旧是矩阵乘法，在解码阶段，反变换可表示为如下形式：
+\begin{equation}
+R = T^TXT,
+\end{equation}
+其中$T$是变换系数矩阵，$X$是经过反量化之后的残差系数矩阵，$R$为反变换结果矩阵。在本文之前的工作中，反变换的SIMD并行算法设计采用先列变换再行变换的两阶段实现方式：
+\begin{equation}\label{equ:formula-transform-step1}
+Step1:	\quad B_{i,j} = \sum_{k=0}^n A_{i,k}X_{k,j},
+\end{equation}
+以及
+\begin{equation}\label{equ:formula-transform-step2}
+Step2:	\quad R_{i,j} = \sum_{k=0}^n B_{i,k}A_{j,k},
+\end{equation}
+其中$B$为保存中间结果的矩阵，$A$代表$T^T$为变换系数矩阵的转置。由式(\ref{equ:formula-transform-step1})与式(\ref{equ:formula-transform-step2})可知，即便矩阵$A$可以通过提前预取放置在寄存器中，矩阵$X$依然需要通过转置才能够有效地按行方式将列数据读入向量寄存器，然后才可进行列变换操作。转置的过程不仅仅会产生大量的指令数目以及访存的时间开销，而且还会大量占用向量寄存器资源，降低可用于计算的向量寄存器数量，从而对数据级并行度造成不良影响，因此将转置操作从变换过程中移除是十分必要的。
+
+为了达到从反变换中移除转置的目标，本文采用了一种全新的设计思路，通过对整数变换过程的重新梳理实现矩阵乘法与转置操作的解耦合，从而将转置操作打散并恰当地融入列变换的过程中。图\ref{fig:transpose-free_IT}中展示了算法的核心过程，以计算$32 \times 32$大小的变换单元TU的中间结果矩阵$B$的前四个系数的过程为例，其关键在于预取之后的数据排布顺序：当系数矩阵$A$的每一行系数两两进行了置乱 (shuffle) 操作并且中间结果矩阵$B$的每两行系数按照相应顺序完成交织排布之后，即可进行高效的向量乘法运算。对于大小为$N \times N$ ($N = 8, 16, 32$) 的变换单元TU，中间结果矩阵$B$每次可以并行得到4个列变换之后的系数，消耗$N/2$条PMADDWD指令以及$N/2 - 1$条PADDD指令，得到的中间结果系数为32比特长度，经过打包 (pack) 操作之后即可直接用于行变换的计算，无需任何多余的转存或转置操作，从而有效地减少了指令数目并且使寄存器得到了更有效的利用。由于所有存放矩阵系数的缓冲区均已按照16-byte进行了首地址对齐，从内存中预取系数矩阵的访存开销也已降至最低。
+
+\begin{figure}[!tp]
+	\centering
+	\includegraphics[width = 0.8\linewidth]{eps/transpose-free_IT}
+	\caption{\label{fig:transpose-free_IT}
+		无转置反变换算法的核心过程，以计算中间结果矩阵$B=AX$的前四个系数为例}
+	% \vspace{5pt}
+\end{figure}
+
+另一方面，可能存在的疑问是\ref{sec:6.3.3}节针对运动补偿插值设计的低复杂度算法能否用于反变换过程中用简单的加减和移位运算取代乘法操作。需要指明的是，在H.265/HEVC中，每个不同大小的变换单元TU其变换系数矩阵都是不同的，因此难以找到能够被多次重复使用的公共运算单元，在此种情况下若采用类似\ref{sec:6.3.3}节的方法对反变换的向量乘法进行拆分将反而导致指令数目的急剧上升以及执行效率的下降。另外同样需要指出的是，有限的向量寄存器个数依然是限制反变换的SIMD数据级并行算法性能的瓶颈，对于$16 \times 16$以及$32 \times 32$大小的变换单元TU不得不通过多次装载数据的方式才可分批完成整个反变换过程，这一瓶颈有望在64位系统上通过采用新的SIMD多媒体指令集如AVX2的方式，借助更多的向量寄存器以及更大的数据吞吐量得到缓解。
+
 \subsection{对称去块滤波算法}
 
 在HEVC的去块滤波中，对于8x8的块边界，每次以4个像素为单元来决定是否需要进行滤波，并决定是进行高强度滤波还是普通滤波。这样就把边界同一侧每次操作的像素个数限制为4，无法充分利用向量寄存器同时对8个像素进行计算。为了提高并行度，我们设计了一个与Yang等人在H.264/AVC解码器优化工作\supercite{Yang-TCE2006}中的描述类似的对称去块滤波算法。
@@ -100,13 +238,13 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 总之，在我们所提出的解码器原型基础上，SIMD算法被用于优化大多数耗时解码模块，显著提高了其运行效率。在下一节中，我们将给出一个基于帧的并行解码框架，作为解码器优化的最后一步。
 
+\section{帧级并行解码框架}
+
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width = 0.8\linewidth]{eps/parallel_decoding_framework}
 	\caption{\label{fig:parallel_decoding_framework}HEVC帧级并行解码框架图}
 \end{figure}
-
-\section{帧级并行解码框架}
 
 随着多核处理器的普及，并行算法成为了发挥这些处理器能力的必需。在本节中，我们提出了一个帧级的并行解码框架，可以在通过多线程取得几倍的解码加速比。该框架如图\ref{fig:parallel_decoding_framework}所示，其工作流程说明如下：
 \begin{enumerate}
