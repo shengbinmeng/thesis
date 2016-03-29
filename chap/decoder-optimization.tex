@@ -81,32 +81,32 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 在HEVC解码中，去块滤波之后的像素需要先进行采样自适应偏移（SAO）才能输出为解码图像。对于每个CTU，其像素进行SAO的模式由码流中解析出的\textit{SAOType}来指定。SAO模式有两种，一个是条带（Band）模式，一个是边缘（Edge）模式。这两种模式都会在原像素值上增加一个偏移量。不同之处在于，在条带模式中，这个偏移量由原像素值本身（0~255）来索引，而在边缘模式中，这个偏移量由原像素与其两个相邻像素的梯度值来索引。在条带模式中，每个条带横跨的像素值为4，因此256个不同像素值被分为了32个条带，作为索引去查表决定加到该像素上的偏移量。这样的索引操作在ARM架构上可以用NEON指令集扩展中的并行查表指令进行优化。然而遗憾的是，x86架构下没有对应的指令，只能用普通代码实现。相比于条带模式，边缘模式更为复杂，也是本节提出的并行索引SAO算法主要针对的一种模式。下面进行详细介绍。
 
-在边缘模式中，一个像素要减去与它相邻的两个像素。这两个邻居所在的方向可以从图\ref{fig:SAO_edge_direction}中的四个方向选择其一。相减得到两个差值，差值根据其正负或0对应到1、-1和0这三个符号；将两个差值对应的符号相加（可能的结果为-2、-1、0、1、2），作为偏移量的索引。因为一个CTU中的所有像素相减方向都相同，所以计算索引的操作可以并行执行。对于128位的向量寄存器来说，一次可以处理16个像素。图\ref{fig:SAO_edge_parallel_index}展示了我们设计的并行索引算法的核心过程，其中用一对PCMPGTB/PCMPLTB指令和一对PAND/POR指令得到了16个像素相减的符号值。根据选定的方向求出两组符号值之后，通过PADDB指令将它们相加就得到16个索引值，最后用一条PSHUFB指令来查表得到所需的偏移量。很明显这种并行索引SAO算法已经取得了最大的数据级并行度，指令数量已经压缩到最少。需要指出的是，对于图\ref{fig:SAO_edge_direction}中$0^\circ$、$45^\circ$和$135^\circ$这三个方向的相减，将正确的像素取到向量寄存器中会有无法避免的开销，因为要访问的内存是非连续的。
-
-\begin{figure}[!tp]
+\begin{figure}[t]
 	\centering
 	\includegraphics[width = 0.9\linewidth]{eps/SAO_edge_direction}
 	\caption{\label{fig:SAO_edge_direction}HEVC中的SAO在边缘模式下选取相邻像素的4种方向}
 \end{figure}
 
-\begin{figure}[!tp]
+\begin{figure}[t]
 	\centering
 	\includegraphics[width = 0.95\linewidth]{eps/SAO_edge_parallel_index}
 	\caption{\label{fig:SAO_edge_parallel_index}HEVC中的SAO在边缘模式下的得到16个符号值的过程}
 \end{figure}
+
+在边缘模式中，一个像素要减去与它相邻的两个像素。这两个邻居所在的方向可以从图\ref{fig:SAO_edge_direction}中的四个方向选择其一。相减得到两个差值，差值根据其正负或0对应到1、-1和0这三个符号；将两个差值对应的符号相加（可能的结果为-2、-1、0、1、2），作为偏移量的索引。因为一个CTU中的所有像素相减方向都相同，所以计算索引的操作可以并行执行。对于128位的向量寄存器来说，一次可以处理16个像素。图\ref{fig:SAO_edge_parallel_index}展示了我们设计的并行索引算法的核心过程，其中用一对PCMPGTB/PCMPLTB指令和一对PAND/POR指令得到了16个像素相减的符号值。根据选定的方向求出两组符号值之后，通过PADDB指令将它们相加就得到16个索引值，最后用一条PSHUFB指令来查表得到所需的偏移量。很明显这种并行索引SAO算法已经取得了最大的数据级并行度，指令数量已经压缩到最少。需要指出的是，对于图\ref{fig:SAO_edge_direction}中$0^\circ$、$45^\circ$和$135^\circ$这三个方向的相减，将正确的像素取到向量寄存器中会有无法避免的开销，因为要访问的内存是非连续的。
 
 
 需要指出的是，对于一些比较老的x86机器，其处理器只支持较早期版本的指令集扩展（如SSE2、SSE或MMX），因此上面优化中用到的一些高级指令（如PHADDW、PMADDUBSW等）可能无法使用。为了兼容性考虑，在检测到这样的机器时，一些横向的并行数据操作必须用所支持的较简单指令来实现，这时会有一定的速度牺牲。相反，对于某些支持AVX的最新处理器，向量寄存器的长度由128位扩展到了256位，数据吞吐率可以再提高一倍，这样就能进一步加速这些采用SIMD进行优化的模块。同理，在移动设备上ARM处理器提供的向量寄存器的个数更多，而且SIMD指令集更加智能（能很容易实现转置操作和条带模式SAO中的并行索引），这都能作为速度提升的空间。
 
 总之，在我们所提出的解码器原型基础上，SIMD算法被用于优化大多数耗时解码模块，显著提高了其运行效率。在下一节中，我们将给出一个基于帧的并行解码框架，作为解码器优化的最后一步。
 
-\section{帧级并行解码框架}
-
-\begin{figure}[!tp]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[width = 0.8\linewidth]{eps/parallel_decoding_framework}
 	\caption{\label{fig:parallel_decoding_framework}HEVC帧级并行解码框架图}
 \end{figure}
+
+\section{帧级并行解码框架}
 
 随着多核处理器的普及，并行算法成为了发挥这些处理器能力的必需。在本节中，我们提出了一个帧级的并行解码框架，可以在通过多线程取得几倍的解码加速比。该框架如图\ref{fig:parallel_decoding_framework}所示，其工作流程说明如下：
 \begin{enumerate}
@@ -115,7 +115,7 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 	\item 主线程收到解码上下文准备好的信号后，它会把解码上下文信息拷贝到其他可用线程，并调度它们并行地开始后续帧的CTU解码循环。
 \end{enumerate}
 
-从该流程和\ref{fig:parallel_decoding_framework}可以看出，所谓的并行任务指的是不同帧的CTU解码循环及CTU解码过程可以并发地执行，但高层语法和每一帧的slice解码阶段还是需要按照特定的顺序进行。
+从该流程和图\ref{fig:parallel_decoding_framework}可以看出，所谓的并行任务指的是不同帧的CTU解码循环及CTU解码过程可以并发地执行，但高层语法和每一帧的slice解码阶段还是需要按照特定的顺序进行。
 
 在本文提出的帧级并行解码框架中，帧内预测的帧是相对独立的，其解码过程与单线程一样。但对于帧间预测的帧，由于运动校正依赖于参考帧的重建像素，所以必须设立线程同步机制。为了平衡同步开销和并发任务的粒度，该框架使用了像素行级别的同步点。对每一帧，有一个变量用于指示该帧的哪一行已经完成解码重建。参考它的帧通过不断检查这一变量，就能在其所依赖的像素行准备好后立即开始进行运动校正。这样的设计用较小的开销解决了解码中的数据依赖问题，提高了潜在的并行度。
 
@@ -125,7 +125,7 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 对于x86架构平台，我们选用了Intel i7-2600 3.4GHz四核处理器，机器内存8GB，操作系统为Microsoft Windows 7。HEVC标准测试序列用HM 10编码器编码，重要的编码配置参见表\ref{table:HM_config}。
 
-\begin{table}[h]
+\begin{table}[t]
 	\begin{center}
 		\caption{生成测试码流所采用的HM编码配置} \label{table:HM_config}
 		\renewcommand{\arraystretch}{1.5}
@@ -160,14 +160,14 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 为了得到不同码率的码流，我们采用了四个QP值：23、28、33、38。对于每一个QP值和每一个测试序列，编出的码流分别用本文所实现的解码器、HM参考软件中的解码器、业界知名的多媒体框架FFmpeg\footnote{http://ffmpeg.org}中的解码器进行解码，比较三者的解码帧率。我们的解码器和HM都是用Microsoft Studio 2008编译得到，而FFmpeg是从网上下载的可执行文件\footnote{http://ffmpeg.zeranoe.com/builds/}。标准测试集中的A类（2560x1600）和B类（1920x1080）序列的测试结果参见表\ref{table:decoding_speed_x86}。表中的加速比都是相对于HM计算得到的结果。从中可以看出，在四线程解码时，我们的解码器相比于HM 10.0有平均13.21倍的速度提升，FFmpeg虽然也比HM 10高效得多，但其性能只有我们的三分之一不到。我们的解码器相对于FFmpeg的加速比在单线程和多线程下分别为6.13/2.18=2.81和13.21/3.59=3.68。帧级并行解码框架的有效性可以从多线程比单线程的加速比体现出来。我们的解码器4线程比单线程速度提高了2.15倍（13.21/6.13），而FFmpeg的4线程只比单线程速度提高了1.65倍（3.59/2.18）。
 
-\begin{table}
+\begin{table}[t]
 	\begin{center}
 		\caption{x86平台的三种HEVC解码器的解码速度对比} \label{table:decoding_speed_x86}
 		\renewcommand{\arraystretch}{1.5}
 		\tiny
 		\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c|c}
 			\hline
-			\multirow{3}{*}{\tabincell{c}{视频分辨率 \\ (测试集)}} & \multirow{3}{*}{\tabincell{c}{序列名称 \\ 帧数 \\ 原始帧率}} & \multirow{3}{*}{QP} & \multirow{3}{*}{\tabincell{c}{码率 \\ (kbps)}} & \multirow{2}{*}{HM 10} & \multicolumn{2}{c|}{\multirow{2}{*}{FFmpeg}} & \multicolumn{2}{c|}{\multirow{2}{*}{FFmpeg 4线程}} & \multicolumn{2}{c|}{\multirow{2}{*}{本文方法}} & \multicolumn{2}{c}{\multirow{2}{*}{本文方法 4线程}} \\
+			\multirow{3}{*}{\tabincell{c}{视频分辨率 \\ (测试集)}} & \multirow{3}{*}{\tabincell{c}{序列名称 \\ 帧数 \\ 原始帧率}} & \multirow{3}{*}{QP} & \multirow{3}{*}{\tabincell{c}{码率 \\ (kbps)}} & \multirow{2}{*}{HM 10} & \multicolumn{2}{c|}{\multirow{2}{*}{FFmpeg}} & \multicolumn{2}{c|}{\multirow{2}{*}{FFmpeg 4线程}} & \multicolumn{2}{c|}{\multirow{2}{*}{本文解码器}} & \multicolumn{2}{c}{\multirow{2}{*}{本文解码器 4线程}} \\
 			& & & & & \multicolumn{2}{c|}{} & \multicolumn{2}{c|}{} & \multicolumn{2}{c|}{} & \multicolumn{2}{c}{} \\
 			\cline{5-13}
 			& & & & 帧率 & 帧率 & 加速比 & 帧率 & 加速比 & 帧率 & 加速比 & 帧率 & 加速比 \\
@@ -245,14 +245,14 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 考虑到现在的采集和显示设备逐渐开始支持4K分辨率（3840x2160）的视频，我们对所实现的HEVC解码器的4K视频解码能力也做了测试。结果参见表\ref{table:4K_decoding}。其中的测试序列来自``Elemental Technology 4 K Resolution Videos for Open Test''\footnote{www.elementaltechnologies.com/resources/4k-test-sequences}，码流码率分为三个等级。从该表中的结果可以看出，当开启4线程时，对10Mbps以内码率（视频流媒体中的视频码率通常不会超过这么高）的视频解码速度均在40FPS以上。而且当我们把解码速度限制在恰好实时（通常为24FPS）的时候，解码器程序的CPU占用率最高也就在20\%左右，这为4K视频处理和显示等其他同样大计算量的操作留了充足的空间。
 
-\begin{table}
+\begin{table}[t]
 	\begin{center}
 		\small
 		\caption{x86平台上本文实现的HEVC解码器对4K视频的解码速度}\label{table:4K_decoding}
 		\renewcommand{\arraystretch}{1.2}
 		\begin{tabular}{c|c|c|c|c}
 			\hline
-			\multirow{2}{*}{\tabincell{c}{$3840 \times 2160$ \\ 视频序列}} & \multirow{2}{*}{\tabincell{c}{视频帧数 \\ 原始帧率}} & \multirow{2}{*}{\tabincell{c}{视频码率 \\ (kbps)}} & \multirow{2}{*}{\tabincell{c}{本文方法 4线程 \\ 解码帧率}} & \multirow{2}{*}{\tabincell{c}{ 实时解码($24$ fps) \\ CPU占用率}} \\
+			\multirow{2}{*}{\tabincell{c}{$3840 \times 2160$ \\ 视频序列}} & \multirow{2}{*}{\tabincell{c}{视频帧数 \\ 原始帧率}} & \multirow{2}{*}{\tabincell{c}{视频码率 \\ (kbps)}} & \multirow{2}{*}{\tabincell{c}{本文解码器 4线程 \\ 解码帧率}} & \multirow{2}{*}{\tabincell{c}{ 实时解码($24$ fps) \\ CPU占用率}} \\
 			& & & & \\
 			\hline
 			\hline
@@ -304,14 +304,14 @@ ResultRow = (OriginalRow \land \neg Mask ) \lor (FilteredRow \land Mask).
 
 在ARM架构处理器上我们也做了类似的对比实验。由于HM不提供ARM版的编译，FFmpeg是我们能找到的最好的对比对象。我们的解码器程序和FFmpeg的ARM版本都是由GCC4.8编译得到。测试设备使用的是Google Galaxy Nexus智能手机。该设备的处理器是OMAP4460 1.2GHz双核Cortex-A9，内存为1GB，操作系统是Android 4.0。考虑到移动端的实际应用情况，我们在ARM上的测试序列选用了更低分辨率的序列，且只测试了较低码率的码流。实验结果具体参见表\ref{table:decoding_speed_ARM}。可以看到，本文所实现的解码器在常见的双核移动处理器上平均解码速度是FFmpeg的2.76倍，对于720p视频每秒能解（33～52）帧，足以实现高清视频的实时解码。
 
-\begin{table}
+\begin{table}[!ht]
 	\begin{center}
 		\small
 		\caption{ARM平台的两种HEVC解码器的解码速度对比}\label{table:decoding_speed_ARM}
 		\renewcommand{\arraystretch}{1.2}
 		\begin{tabular}{c|c|c|c|c|c}
 			\hline
-			\multirow{2}{*}{视频分辨率} & \multirow{2}{*}{测试序列} & \multirow{2}{*}{\tabincell{c}{码率 \\ (kbps)}} & \multirow{2}{*}{\tabincell{c}{FFmpeg 2线程 \\ 解码帧率}} & \multicolumn{2}{c}{本文方法 2线程} \\
+			\multirow{2}{*}{视频分辨率} & \multirow{2}{*}{测试序列} & \multirow{2}{*}{\tabincell{c}{码率 \\ (kbps)}} & \multirow{2}{*}{\tabincell{c}{FFmpeg 2线程 \\ 解码帧率}} & \multicolumn{2}{c}{本文解码器 2线程} \\
 			\cline{5-6}
 			& & & & 解码帧率 & 加速比 \\
 			\hline

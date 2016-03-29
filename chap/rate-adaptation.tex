@@ -150,7 +150,7 @@ PID控制思想具有很强的扩展性，除了上述在达尔文流媒体点�
 	\caption{简化的直播系统传输架构\label{fig:08}}
 \end{figure}
 
-使用PID进行码率自适应的关键在于选取一个能够反映传输状况的过程变量。基于TCP的直播系统在传输过程中有四个缓冲区，分别是应用层发送缓冲区（ASB）、TCP发送缓冲区、TCP接收缓冲区、播放缓冲区（PB）。其中对内容产生方最重要的信息是ASB内的数据长度，记为择$S_{ASB}(t)$（在时刻$t$的值），它能够直接反映视频码率和吞吐量之间的匹配情况。当视频码率高于当前的吞吐量时，该缓冲区内的数据长度趋向于增大，否则保持相对稳定或者减小为0。理想状况下，它首先应该是一个大于0的值，以保证接收方播放不中断；其次它不应该太大，否则意味着发送码率太高。所以，我们选择$S_{ASB}(t)$作为系统的过程变量，而选择一个接近0的常量$\varepsilon$作为控制目标。
+使用PID进行码率自适应的关键在于选取一个能够反映传输状况的过程变量。基于TCP的直播系统在传输过程中有四个缓冲区，分别是应用层发送缓冲区（ASB）、TCP发送缓冲区、TCP接收缓冲区、播放缓冲区（PB）。其中对内容产生方最重要的信息是ASB内的数据长度，记为$S_{ASB}(t)$（在时刻$t$的值），它能够直接反映视频码率和吞吐量之间的匹配情况。当视频码率高于当前的吞吐量时，该缓冲区内的数据长度趋向于增大，否则保持相对稳定或者减小为0。理想状况下，它首先应该是一个大于0的值，以保证接收方播放不中断；其次它不应该太大，否则意味着发送码率太高。所以，我们选择$S_{ASB}(t)$作为系统的过程变量，而选择一个接近0的常量$\varepsilon$作为控制目标。
 
 然而，如果网络吞吐量在一个小的范围频繁波动，将使得系统变量值不稳定而且相对随机，导致不必要的频繁的调整。为了消除这样的随机性，我们将过程变量的定义修改为$\overline{S_{ASB}(t)}$，它表示在时刻$t$之前的一个时间段$\tau$内$S_{ASB}(t)$的平均值。它可以表示为：
 \begin{equation}
@@ -184,53 +184,53 @@ PID控制思想具有很强的扩展性，除了上述在达尔文流媒体点�
 
 接下来，我们展示各种质量控制算法的结果并进行分析比较。
 
-\subsection{结果和分析}
+\subsection{结果分析}
+
+\begin{figure*}[t]
+	\centering
+	\subfloat[不同质量控制算法的质量等级均值]{
+		\includegraphics[width=0.5\textwidth]{figures/Quality-all.png}
+		\label{fig:quality-all}}
+	\subfloat[不同质量控制算法的质量等级方差]{
+		\includegraphics[width=0.5\textwidth]{figures/Variance-all.png}
+		\label{fig:variance-all}}
+	\caption{长/短期预测算法与达尔文服务器中的包延迟反馈（PDF）算法的比较}
+	\label{fig:performance-all}
+\end{figure*}
+
+\begin{figure*}[t]
+	\centering
+	\subfloat[PID和PDF算法的质量等级均值]{
+		\includegraphics[width=0.5\textwidth]{figures/Quality-two.png}
+		\label{fig:quality-two}}
+	\subfloat[PID和PDF算法的质量等级方差]{
+		\includegraphics[width=0.5\textwidth]{figures/Variance-two.png}
+		\label{fig:variance-two}}
+	\caption{本文提出的PID控制算法与达尔文服务器中的包延迟反馈（PDF）算法的比较}
+	\label{fig:performance-two}
+\end{figure*}
+
+\begin{table*}[ht]
+	\centering
+	\caption{不同质量控制算法与包延迟反馈算法的定量比较}
+	\label{tab:improvement}
+	\begin{tabular}[b]{p{4.2cm}<{\centering}|p{4.2cm}<{\centering}|p{4.2cm}<{\centering}}
+		\hline \hline
+		控制算法 & 质量等级均值的增长 & 质量等级方差的增长 \\ \hline
+		包延迟反馈 (PDF) & 0.0\% & 0.0\% \\ \hline
+		短期预测 (STP) & \textbf{+13.5\%} & +38.5\% \\ \hline
+		长期预测 (LTP) & +7.9\% & -17.2\% \\ \hline
+		PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
+	\end{tabular}
+\end{table*}
 
 为了分析PID控制模型各个部分的效果，我们首先只用比例部分和积分部分来进行了初步的测试实验。由于这两个部分各自对应当前的短期误差和积累的长期误差，我们分别称之为短期预测算法（short-term prediction，简称STP）和长期预测算法（long-term prediction，简称LTP）。图\ref{fig:performance-all}展示了这两种控制算法和基准算法的实验结果。可以看出，短期预测算法能取得最高的平均质量等级，但它的质量等级方差也是最高的。这正符合短期预测总是倾向于紧紧跟随带宽变化的特点。长期预测算法恰恰与之相反，保持了一个较低的质量等级方差，但也牺牲了一部分平均质量。虽然它的平均质量不如短期预测算法，但也超出了基准算法。
-
-\begin{figure*}[t]
-\centering
-\subfloat[不同质量控制算法的质量等级均值]{
-\includegraphics[width=0.5\textwidth]{figures/Quality-all.png}
-\label{fig:quality-all}}
-\subfloat[不同质量控制算法的质量等级方差]{
-\includegraphics[width=0.5\textwidth]{figures/Variance-all.png}
-\label{fig:variance-all}}
-\caption{长/短期预测算法与达尔文服务器中的包延迟反馈（PDF）算法的比较}
-\label{fig:performance-all}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\subfloat[PID和PDF算法的质量等级均值]{
-\includegraphics[width=0.5\textwidth]{figures/Quality-two.png}
-\label{fig:quality-two}}
-\subfloat[PID和PDF算法的质量等级方差]{
-\includegraphics[width=0.5\textwidth]{figures/Variance-two.png}
-\label{fig:variance-two}}
-\caption{本文提出的PID控制算法与达尔文服务器中的包延迟反馈（PDF）算法的比较}
-\label{fig:performance-two}
-\end{figure*}
 
 短期预测和长期预测算法有各自的局限性，完整的PID控制算法则既能降低质量波动又能提升平均质量。实验结果可参见图\ref{fig:performance-two}。可以看到，当与积分和微分相结合后，比例部分在短期预测算法中那样的激进效果已经弱化了。如图\ref{fig:variance-two}所示，PID算法取得了比PDF算法更低的质量波动。
 
 表\ref{tab:improvement}列出了四种控制算法的定量比较数据，从中我们可以看出PID算法相比其他几种算法有明显的优势。与基准算法PDF相比，基于PID的质量控制算法取得了8.6\%的视频质量提升，同时将质量波动也降低了24.8\%。当带宽在平均值800kbps附近波动的时候，四种控制算法对应的视频质量等级变化情况如图\ref{fig:fluctuation}所示。从中我们可以明显观察到PID控制算法得到的视频质量更加平稳。
 
-\begin{table*}[h]
-\centering
-\caption{不同质量控制算法与包延迟反馈算法的定量比较}
-\label{tab:improvement}
-\begin{tabular}[b]{p{4.2cm}<{\centering}|p{4.2cm}<{\centering}|p{4.2cm}<{\centering}}
-\hline \hline
-控制算法 & 质量等级均值的增长 & 质量等级方差的增长 \\ \hline
-包延迟反馈 (PDF) & 0.0\% & 0.0\% \\ \hline
-短期预测 (STP) & \textbf{+13.5\%} & +38.5\% \\ \hline
-长期预测 (LTP) & +7.9\% & -17.2\% \\ \hline
-PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
-\end{tabular}
-\end{table*}
-
-\begin{figure}
+\begin{figure}[t]
 \centering
 \includegraphics[width = 0.45\linewidth]{figures/Fluctuation.png}
 \caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
@@ -240,30 +240,13 @@ PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
 
 上面的实验直接用可伸缩视频中内置的伸缩层来构造质量等级，并没有结合本文前一章中提出的码流截取算法。实际的可伸缩视频流媒体系统中，当码率自适应算法给出一个适合传输的码率后，由码流截取方案根据这一码率限制截取出一个子流向客户端发送。本小节展示将本文提出的算法相结合的系统运行效果。
 
-我们的比较对象是采用其内置的质量控制算法和JSVM基本码流截取方案的达尔文流媒体服务器。比较结果如图\ref{fig:fluctuation-psnr}所示。其中展示了带宽在400kbps、600kbps、800kbps和1000kbps附近波动时，所发送视频流的PSNR变化情况。可以看到，采用本文算法的系统性能要好于比较对象，体现在：一，成功避免了不必要的质量下降，例如图\ref{fig:Fluctuation-PSNR3}的350秒处和图\ref{fig:Fluctuation-PSNR4}的150秒处；二，能够维持一个相对更高的PSNR值，例如图\ref{fig:Fluctuation-PSNR1}的450秒附近和图\ref{fig:Fluctuation-PSNR2}的500秒附近。
+我们的比较对象是采用其内置的质量控制算法和JSVM基本码流截取方案的达尔文流媒体服务器。比较结果如图\ref{fig:fluctuation-psnr}所示。其中展示了带宽在400kbps、600kbps、800kbps
+和1000kbps附近波动时，所发送视频流的PSNR变化情况。可以看到，采用本文算法的系统性能要好于比较对象，体现在：一，成功避免了不必要的质量下降，例如图\ref{fig:Fluctuation-PSNR3}的
+350秒处和图\ref{fig:Fluctuation-PSNR4}的150秒处；二，能够维持一个相对更高的PSNR值，例如图\ref{fig:Fluctuation-PSNR1}的450秒附近和图\ref{fig:Fluctuation-PSNR2}的500秒附近。
 
 整个时间过程中的PSNR均值和方差在表\ref{tab:improvement-combined}中列出，定量地证明了本文算法的优越性。例如，当带宽在800kbps附近波动时，采用本文算法的系统所传送视频的PSNR平均值为38.75dB，比比较对象高了0.83个dB，同时PSNR方差也由1.24降低到了0.69，意味着视频质量平滑性也更好。
 
-\begin{figure*}[h]
-\centering
-\subfloat[带宽在400kbps附近波动]{
-\includegraphics[width=0.54\textwidth]{figures/Fluctuation-PSNR1.png}
-\label{fig:Fluctuation-PSNR1}} \\
-\subfloat[带宽在600kbps附近波动]{
-\includegraphics[width=0.54\textwidth]{figures/Fluctuation-PSNR2.png}
-\label{fig:Fluctuation-PSNR2}} \\
-\subfloat[带宽在800kbps附近波动]{
-\includegraphics[width=0.54\textwidth]{figures/Fluctuation-PSNR3.png}
-\label{fig:Fluctuation-PSNR3}} \\
-\subfloat[带宽在1000kbps附近波动]{
-\includegraphics[width=0.54\textwidth]{figures/Fluctuation-PSNR4.png}
-\label{fig:Fluctuation-PSNR4}}
-\caption{不同流媒体系统所发送视频的PSNR随时间的变化情况
-\label{fig:fluctuation-psnr}}
-\end{figure*}
-
-
-\begin{table*}[h]
+\begin{table*}[!h]
 	\centering
 	\caption{采用本文算法的系统与原始系统PSNR均值与方差的比较}
 	\label{tab:improvement-combined}
@@ -296,15 +279,30 @@ PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
 	\end{minipage}
 \end{table*}
 
+\begin{figure*}[!ht]
+\centering
+\subfloat[带宽在400kbps附近波动]{
+\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR1.png}
+\label{fig:Fluctuation-PSNR1}} \\
+\subfloat[带宽在600kbps附近波动]{
+\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR2.png}
+\label{fig:Fluctuation-PSNR2}} \\
+\subfloat[带宽在800kbps附近波动]{
+\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR3.png}
+\label{fig:Fluctuation-PSNR3}} \\
+\subfloat[带宽在1000kbps附近波动]{
+\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR4.png}
+\label{fig:Fluctuation-PSNR4}}
+\caption{不同流媒体系统所发送视频的PSNR随时间的变化情况
+\label{fig:fluctuation-psnr}}
+\end{figure*}
+
 
 \subsection{用在直播系统中的效果}
 
 为了对基于PID的直播系统内容发送码率自适应方法进行测试，我们实现了一个基于TCP的手机视频直播系统。我们选择业界已经广泛使用的RTMP协议作为应用层流媒体协议，具体实现采用了第三方开源的代码库librtmp\footnote{http://rtmpdump.mplayerhq.hu/librtmp.3.html}。我们用nginx-rtmp-module\footnote{https://github.com/arut/nginx-rtmp-module}帮助完成了中转服务器的搭建。我们采用了开源软件x264\footnote{http://www.videolan.org/developers/x264.html}作为视频编码器。我们在Android平台上实现了内容产生和上传的程序，集成了我们提出的自适应码率控制算法，并采用开源播放器ffplay\footnote{https://ffmpeg.org/}作为接收方，它可以播放RTMP协议的流媒体并对播放缓冲区长度进行预设。我们通过动态改变内容产生方所连接的路由器所允许的最大带宽来模拟出波动的网络状况。
 
-在我们的实验中，采集帧率设置为15 FPS，过程变量$\overline{S_{ASB}(t)}$的控制目标值$\tau$设为15（单位是数据段的个数，每个数据段含有一个GOP的视频），改变码率的单位为20kbps，初始码率为500kbps，对系统状态的检查周期为2秒。我们调节得到的PID控制参数$K_p$、$K_i$和$K_d$分别为0.8，0.13以及0.07。我们在3种条件下进行测试：（1）固定带宽为1Mbps；
-（2）长周期波动带宽，带宽每隔40秒变化一次，在200kbps到1.4Mbps之间波动；（3）短周期波动带宽，在200kbps到1.4Mbps之间随机波动。测试结果参见图\ref{fig:09}、\ref{fig:14}和表\ref{tab:live-bandwidth}、\ref{tab:live-playtime}。
-
-\begin{figure}[h]
+\begin{figure}[!t]
 	\centering
 	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:09-1}\includegraphics[width=0.6\textwidth]{clip/09-1.png}} \\
 	\subfloat[长周期波动带宽的实验结果]{\label{fig:09-2}\includegraphics[width=0.6\textwidth]{clip/09-2.png}} \\
@@ -313,28 +311,35 @@ PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
 	\label{fig:09}
 \end{figure}
 
-\begin{figure}[h]
+在我们的实验中，采集帧率设置为15 FPS，过程变量$\overline{S_{ASB}(t)}$的控制目标值$\tau$设为15（单位是数据段的个数，每个数据段含有一个GOP的视频），改变码率的单位为20kbps，初始码率为500kbps，对系统状态的检查周期为2秒。我们调节得到的PID控制参数$K_p$、$K_i$和$K_d$分别为0.8，0.13以及0.07。我们在3种条件下进行测试：（1）固定带宽为1Mbps；
+（2）长周期波动带宽，带宽每隔40秒变化一次，在200kbps到1.4Mbps之间波动；（3）短周期波动带宽，在200kbps到1.4Mbps之间随机波动。测试结果参见图\ref{fig:09}、\ref{fig:14}和表\ref{tab:live-bandwidth}、\ref{tab:live-playtime}。
+
+\begin{figure}[!t]
 	\centering
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.6\textwidth]{clip/14-1.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.6\textwidth]{clip/14-2.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.6\textwidth]{clip/14-3.png}}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.65\textwidth]{clip/14-1.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.65\textwidth]{clip/14-2.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.65\textwidth]{clip/14-3.png}}
 	\caption{直播系统在不同测试条件下播放时间占比的变化情况}
 	\label{fig:14}
 \end{figure}
 
-\begin{table*}[h]
+从图\ref{fig:09-1}中可以看出，我们提出的方法使得码率在35秒以内保持上升，直到趋近带宽。从图\ref{fig:09-2}和\ref{fig:09-3}可以看出，通过我们的方法进行的调整，在一个合理的延迟以内，码率和波动的带宽基本保持同步，而且对带宽的频繁变化做了一定的平滑。如表\ref{tab:live-bandwidth}所示，我们提出的算法对于条件（1）、（2）和（3）分别将带宽占用率提高到92.1\%、88.9\%以及87.1\%。
+
+从图\ref{fig:14-1}可以看出，对于进行调整和未进行调整的视频流，播放基本都是连续的。从图\ref{fig:14-2}和\ref{fig:14-3}可以看出，未经过调整的视频流的播放过程被频繁地中断，而经过调整的视频流的播放过程在大部分时间是连续的。如表\ref{tab:live-playtime}所示，我们所提出的方法对于条件（2）和（3）分别将播放时间占比提高到97.3\%和96.1\%，因此显著提高了播放连续性。总之，加入PID码率自适应算法比不进行码率调整的直播效果有所改善。
+
+\begin{table*}
 	\centering
 	\caption{直播系统实验中的带宽利用率}
 	\label{tab:live-bandwidth}
 	\begin{tabular}{c|*{2}{p{1.0cm}<{\centering}|}{p{1.0cm}<{\centering}}}
 		\hline\hline
-		   & CB & LTBV & STBV \\ \hline
+		& CB & LTBV & STBV \\ \hline
 		自适应调整  & 92.1\% & 88.9\% & 87.1\% \\ \hline
 		不进行调整 & 50.4\% & 64.7\% & 80.3\% \\ \hline
 	\end{tabular}
 \end{table*}
 
-\begin{table*}[h]
+\begin{table*}
 	\centering
 	\caption{直播系统实验中的播放时间占比}
 	\label{tab:live-playtime}
@@ -345,9 +350,6 @@ PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
 		不进行调整 & 100\% & 73.4\% & 71.5\% \\ \hline
 	\end{tabular}
 \end{table*}
-
-从图\ref{fig:09-1}中可以看出，我们提出的方法使得码率在35秒以内保持上升，直到趋近带宽。从图\ref{fig:09-2}和\ref{fig:09-3}可以看出，通过我们的方法进行的调整，在一个合理的延迟以内，码率和波动的带宽基本保持同步，而且对带宽的频繁变化做了一定的平滑。如表\ref{tab:live-bandwidth}所示，我们提出的算法对于条件（1）、（2）和（3）分别将带宽占用率提高到92.1\%、88.9\%以及87.1\%。从图\ref{fig:14-1}可以看出，对于进行调整和未进行调整的视频流，播放基本都是连续的。从图\ref{fig:14-2}和\ref{fig:14-3}可以看出，未经过调整的视频流的播放过程被频繁地中断，而经过调整的视频流的播放过程在大部分时间是连续的。如表\ref{tab:live-playtime}所示，我们所提出的方法对于条件（2）和（3）分别将播放时间占比提高到97.3\%和96.1\%，因此显著提高了播放连续性。总之，加入PID码率自适应算法比不进行码率调整的直播效果有所改善。
-
 
 \section{本章小结}
 

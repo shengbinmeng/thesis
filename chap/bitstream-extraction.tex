@@ -7,6 +7,7 @@
 \subsection{模型推导}
 
 在H.264/AVC中，解码过程具有线性性质\supercite{Winken2008}。在不考虑舍入、截断和去块滤波的情况下，解码的主要步骤，如预测、变换、量化等，都可以近似认为是线性操作。基于此，整个解码过程可以用矩阵的形式描述如下：
+
 \begin{equation}
 \label{eq:linear}
 s = {\rm\bf M} \cdot s + {\rm\bf T} \cdot c + p \: .
@@ -32,6 +33,12 @@ s_{I_1} = {\rm\bf M} \cdot s_{I_1} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i 
 s_{I_2} = {\rm\bf M} \cdot s_{I_2} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i \in I_2}{\rm\bf T}_i \cdot c_i \Big) + p \: .
 \end{equation}
 
+\begin{figure}[t]
+	\centering
+	\includegraphics[width = 0.5\linewidth]{figures/Subset.jpg}
+	\caption{增强层数据包集合关系示例 \label{fig:subset}}
+\end{figure}
+
 如果$I_1$是$I_2$的子集，那么二者的重建误差就可以由公式(\ref{eq:subset2})与(\ref{eq:subset1})相减得到：
 \begin{equation}
 \label{eq:minus1}
@@ -42,7 +49,7 @@ s_{I_2} = {\rm\bf M} \cdot s_{I_2} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i 
 \Rightarrow e = s_{I_2} - s_{I_1} = ({\rm\bf I - M})^{-1} \cdot \Big( \sum_{i \in I_2}{\rm\bf T}_i \cdot c_i - \sum_{i \in I_1}{\rm\bf T}_i \cdot c_i \Big) \: .
 \end{equation}
 
-特别地，如果$I_2$和$I_1$的差别只有一个增强层数据包$j$，也就是说$I_2 \setminus I_1 = \{j\}$，那么根据公式(\ref{eq:minus2})，这两个重建序列的差为：
+特别地，如果$I_2$和$I_1$的差别只有一个增强层数据包$j$，也就是说$I_2 \setminus I_1 = \{j\}$（如图\ref{fig:subset}所示），那么根据公式(\ref{eq:minus2})，这两个重建序列的差为：
 \begin{equation}
 \label{eq:error_j}
 e_j = ({\rm\bf I - M})^{-1} \cdot {\rm\bf T}_j \cdot c_j \: .
@@ -50,7 +57,11 @@ e_j = ({\rm\bf I - M})^{-1} \cdot {\rm\bf T}_j \cdot c_j \: .
 
 可以看到，$e_j$只由数据包$j$决定，与其他的增强层数据包无关。这个值$e_j$被定义为数据包$j$的“误差向量”，表示丢弃数据包$j$后所带来的像素值误差。我们可以通过如下的方式得到任何一个数据包$j$的误差向量：选取两个只差$j$的数据包子集，将它们解码得到的视频序列相减即可。
 
-一旦获取了所有增强层数据包对应的误差向量，那么丢弃任意一个增强层数据包子集所导致的失真就可以用这个子集中的数据包的误差向量之和来估计。举例来说，如果增强层数据包$x$, $y$, $z$从一个码流中被丢弃，那么丢弃前后的重建序列之差应该为：$e = e_x + e_y + e_z$。这个简单的相加之所以合理有两方面的原因。第一，不像MSE或PSNR，误差向量仅仅是像素的差值，并不涉及二次方运算。第二，每个增强层数据包在重建中会各自对像素进行精细化，其效果是叠加的（参见前面的推导过程）。
+一旦获取了所有增强层数据包对应的误差向量，那么丢弃任意一个增强层数据包子集所导致的失真就可以用这个子集中的数据包的误差向量之和来估计。举例来说，如果增强层数据包$x$, $y$, $z$从一个码流中被丢弃，那么丢弃前后的重建序列之差应该为：
+\begin{equation}
+e = e_x + e_y + e_z.
+\end{equation}
+这个简单的相加之所以合理有两方面的原因。第一，不像MSE或PSNR，误差向量仅仅是像素的差值，并不涉及二次方运算。第二，每个增强层数据包在重建中会各自对像素进行精细化，其效果是叠加的（参见前面的推导过程）。
 
 应该指出，上述第二点原因的成立是有条件的。在公式(\ref{eq:base0})到(\ref{eq:subset2})中，${\rm\bf M}$和$p$的值都相同是因为，在质量可伸缩的情况下，增强层数据包仅仅是通过操作变换系数得到的，并不涉及运动校正和静态预测过程。然而这对于其他维度的可伸缩（例如视频分辨率改变的空间可伸缩）并不正确。因此，此处推导的线性误差模型并不适用于任意配置的可伸缩视频编码。在本文的研究中，只用到了质量可伸缩；其他伸缩维度将作为未来工作中的探索对象。
 
@@ -61,12 +72,16 @@ e_j = ({\rm\bf I - M})^{-1} \cdot {\rm\bf T}_j \cdot c_j \: .
 \begin{figure}[h]
 \centering
 \includegraphics[width = 0.9\linewidth]{figures/GOP-Structure.png}
-\caption{SVC码流中的图像组（GOP） \label{fig:GOP_Structure}}
+\caption{SVC码流中的图像组（GOP）结构示例 \label{fig:GOP_Structure}}
 \end{figure}
 
 为了减少解码次数，我们将所有的增强层数据包分成若干组，使得每一组中的多个误差向量能在一次解码中同时获取。考虑如图\ref{fig:GOP_Structure}所示具有8帧图像组结构的一个视频码流。在该图中，基本层数据包是黑色的，增强层数据包按照颜色分为了几个组（相同颜色的属于同一组）。在每一组中，增强层数据包的误差向量可以同时计算，因为这些数据包所影响的像素是互不干扰的。例如，丢弃8号数据包只会在帧1、2、3中带来像素误差，而丢弃10号数据包只会在帧5、6、7中带来像素误差（帧的编号从0开始）。因此，我们可以只通过一次相减来同时得到8号和10号数据包的误差向量$e_{8}$和$e_{10}$，以及所有其他GOP中的相同位置数据包（用相同颜色表示它们属于同一组）的误差向量。应该指出，这些误差向量是非常稀疏的，因为丢弃单个数据包带来的失真影响非常有限。
 
-为了获取所有的误差向量，所需的解码次数大约等于增强层的层数$(L_Q - 1)$乘以时间层的层数$L_T$。对于图\ref{fig:GOP_Structure}中的例子而言，$L_Q = 3$，$L_T = 4$，所以所需的解码次数照此计算将会是$(3 - 1) \times 4 = 8$。然而，我们还需要额外的$L_Q - 1 = 2$次解码，来分离“关键帧”\supercite{H.264-Overview}（图\ref{fig:GOP_Structure}中的帧0、8、16）中数据包的失真影响。关键帧中增强层数据包的丢弃将会给它两边相邻的两个GOP都带来失真。例如，丢弃4号数据包带来的失真影响范围将会从帧1直到帧15，从而与帧0和帧16中的数据包的失真影响互相交叠。因此，关键帧同一位置的增强层数据包（2、4、20号数据包）应该被分为两个组：一组包含偶数GOP的关键帧数据包（2和20号包），另一组包含奇数GOP的（4号包）。于是，误差向量获取真正所需要的解码次数应为$(L_Q - 1) \cdot (L_T + 1)$。这与JSVM中Quality Layer信息的获取所需的解码次数大致相当。
+为了获取所有的误差向量，所需的解码次数大约等于增强层的层数$(L_Q - 1)$乘以时间层的层数$L_T$。对于图\ref{fig:GOP_Structure}中的例子而言，$L_Q = 3$，$L_T = 4$，所以所需的解码次数照此计算将会是$(3 - 1) \times 4 = 8$。然而，我们还需要额外的$L_Q - 1 = 2$次解码，来分离“关键帧”\supercite{H.264-Overview}（图\ref{fig:GOP_Structure}中的帧0、8、16）中数据包的失真影响。关键帧中增强层数据包的丢弃将会给它两边相邻的两个GOP都带来失真。例如，丢弃4号数据包带来的失真影响范围将会从帧1直到帧15，从而与帧0和帧16中的数据包的失真影响互相交叠。因此，关键帧同一位置的增强层数据包（2、4、20号数据包）应该被分为两个组：一组包含偶数GOP的关键帧数据包（2和20号包），另一组包含奇数GOP的（4号包）。于是，误差向量获取真正所需要的解码次数应为：
+\begin{equation}
+N = (L_Q - 1) \cdot (L_T + 1).
+\end{equation}
+这与JSVM中Quality Layer信息的获取所需的解码次数大致相当。
 
 \subsection{失真估计与模型验证}
 \label{subsec:distortion-estimation}
@@ -173,32 +188,50 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 本节通过与参考软件JSVM（9.16版本）的对比来展示所提出的码流截取方案的实验结果。
 
+\subsection{实验配置}
+
 所有的测试码流都是按照\ref{subsec:distortion-estimation}中模型验证时所述的配置编码得到的。对于每个码流，我们选取十个截取点：一个是包含所有增强层数据包的完整码流，一个是只含有基本层数据包的最低码率码流，二者之间又等距离地选取了8个码率点。对每个码率点，我们用三种方法进行截取：JSVM中的基本截取器（用JSVM Basic指代），JSVM中采用了Quality Layers的截取器（用JSVM QL指代），以及本文提出的截取器。在本文提出的截取方案中，优先级赋值算法里的优化窗口大小是32帧，也就是4个GOP（GOP大小是8）。所有CIF大小的SVC标准测试序列都进行了测试，码率计算时采用了30FPS的帧率。
 
-\begin{figure*}[h]
+\subsection{结果分析}
+
+\begin{figure*}[!ht]
 	\centering
+	\subfloat[Bus]{
+		\includegraphics[width=0.5\textwidth]{figures/Bus.jpg}
+		\label{fig:Bus}}
 	\subfloat[City]{
-		\includegraphics[width=0.50\textwidth]{figures/City.jpg}
+		\includegraphics[width=0.5\textwidth]{figures/City.jpg}
 		\label{fig:City}}
+	\qquad
+	\subfloat[Crew]{
+		\includegraphics[width=0.5\textwidth]{figures/Crew.jpg}
+		\label{fig:Crew}}
+	\subfloat[Harbour]{
+		\includegraphics[width=0.5\textwidth]{figures/Harbour.jpg}
+		\label{fig:Harbour}}
+	\qquad
+	\subfloat[Football]{
+		\includegraphics[width=0.5\textwidth]{figures/Football.jpg}
+		\label{fig:Football}}
 	\subfloat[Foreman]{
-		\includegraphics[width=0.50\textwidth]{figures/Foreman.jpg}
+		\includegraphics[width=0.5\textwidth]{figures/Foreman.jpg}
 		\label{fig:Foreman}}
 	\qquad
-	\subfloat[Harbour]{
-		\includegraphics[width=0.50\textwidth]{figures/Harbour.jpg}
-		\label{fig:Harbour}}
+	\subfloat[Mobile]{
+		\includegraphics[width=0.5\textwidth]{figures/Mobile.jpg}
+		\label{fig:Mobile}}
 	\subfloat[Soccer]{
-		\includegraphics[width=0.50\textwidth]{figures/Soccer.jpg}
+		\includegraphics[width=0.5\textwidth]{figures/Soccer.jpg}
 		\label{fig:Soccer}}
 	\caption{三种截取方案在不同序列下的性能比较}
 	\label{fig:extraction-performance}
 \end{figure*}
 
-图\ref{fig:extraction-performance}展示了City、Foreman、Harbour和Soccer这四个测试序列的性能比较结果。可以看出，本文提出的方法对应的码率失真曲线几乎总是在最上方（只有Foreman序列中的一个例外）。这意味着在同样的码率限制下，本文提出的算法能取得更好的视频质量。
+图\ref{fig:extraction-performance}展示了全部八个测试序列的性能比较结果。可以看出，本文提出的方法对应的码率失真曲线几乎总是在最上方。这意味着在同样的码率限制下，本文提出的算法能取得更好的视频质量。
 
 表\ref{tab:extraction-gain}列出了本文提出的截取方案相对于比较对象的PSNR提升。对于每一个测试序列，10个码率点的最大和平均PSNR提升都列了出来。可以看到，我们的方法相对于JSVM有明显的性能优势。该表中还列出了当优化窗口设置为48帧（也就是6个GOP）时的结果，证明了通过增大优化窗口确实能提升性能。不过在实际系统中，窗口大小还需考虑其他因素，并非能任意增大（参见\ref{subsec:priority-assign}小节末尾的分析）。
 
-\begin{table*}[h]
+\begin{table*}[t]
 	\centering
 	\caption{本文提出的截取方案相比于JSVM的PSNR提升}
 	\label{tab:extraction-gain}
