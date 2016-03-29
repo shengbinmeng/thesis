@@ -65,7 +65,7 @@ Component_{luma} = \sum_{m=0}^7 p_m \times L_m
 \label{equ:formula-DCT-IF-2}
 \quad Component_{chroma} = \sum_{m=0}^3 q_m \times C_m,
 \end{equation}
-其中$L_0$ ～ $L_7$和$C_0$ ～ $C_3$分别表示亮度分量和色度分量的原始值，而$p_0$ ～ $p_7$和$q_0$ ～ $q_3$表示相应的插值系数组（group of interpolation coefficients，简称GIC）。亮度分量和色度分量运动补偿的精度分别是$1/4$像素和$1/8$像素；这意味着，在水平和竖直两个方向上，亮度分量都有4个待插值的位置，色度分量都有8个待插值的位置。图\ref{fig:luma_position}和图\ref{fig:chroma_position}分别展示了亮度和色度在水平方向的待插值位置。表\ref{table:coeff_position}对应列出了求取各个位置目标值的插值系数组。由该表和公式(\ref{equ:formula-DCT-IF-1})可以知道，如果得到一个亮度位置的目标值在水平方向和竖直方向都需要插值，那么这个求取过程将需要多达72次乘法运算。这就是运动校正主要的耗时因素。
+其中$L_0$ ～ $L_7$和$C_0$ ～ $C_3$分别表示亮度分量和色度分量的原始值，而$p_0$ ～ $p_7$和$q_0$ ～ $q_3$表示相应的插值系数组（Group of Interpolation Coefficients，GIC）。亮度分量和色度分量运动补偿的精度分别是$1/4$像素和$1/8$像素；这意味着，在水平和竖直两个方向上，亮度分量都有4个待插值的位置，色度分量都有8个待插值的位置。图\ref{fig:luma_position}和图\ref{fig:chroma_position}分别展示了亮度和色度在水平方向的待插值位置。表\ref{table:coeff_position}对应列出了求取各个位置目标值的插值系数组。由该表和公式(\ref{equ:formula-DCT-IF-1})可以知道，如果得到一个亮度位置的目标值在水平方向和竖直方向都需要插值，那么这个求取过程将需要多达72次乘法运算。这就是运动校正主要的耗时因素。
 
 \begin{figure}[!tp]
 	\centering
