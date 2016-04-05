@@ -223,11 +223,11 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 	\subfloat[Soccer]{
 		\includegraphics[width=0.5\textwidth]{figures/Soccer.jpg}
 		\label{fig:Soccer}}
-	\caption{三种截取方案在不同序列下的性能比较}
+	\caption{三种码流截取方案的性能比较}
 	\label{fig:extraction-performance}
 \end{figure*}
 
-图\ref{fig:extraction-performance}展示了全部八个测试序列的性能比较结果。可以看出，本文提出的方法对应的码率失真曲线几乎总是在最上方。这意味着在同样的码率限制下，本文提出的算法能取得更好的视频质量。
+图\ref{fig:extraction-performance}展示了全部八个测试序列的性能比较结果。可以看出，本文提出的方法对应的码率失真曲线几乎总是在最上方。这意味着在同样的码率限制下，本文提出的算法能取得更好的视频质量。注意到率失真曲线的第一个和最后一个点分别对应着最大程度截取和不进行截取的情况；在这两种情况下各种截取算法的结果是一样的，因此图中的三条曲线在这些点重合。
 
 表\ref{tab:extraction-gain}列出了本文提出的截取方案相对于比较对象的PSNR提升。对于每一个测试序列，10个码率点的最大和平均PSNR提升都列了出来。可以看到，我们的方法相对于JSVM有明显的性能优势。该表中还列出了当优化窗口设置为48帧（也就是6个GOP）时的结果，证明了通过增大优化窗口确实能提升性能。不过在实际系统中，窗口大小还需考虑其他因素，并非能任意增大（参见\ref{subsec:priority-assign}小节末尾的分析）。
 
@@ -265,6 +265,61 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 \end{table*}
 
 最后需要指出，在JSVM之外的其他码流截取方法中，Maani等人的工作\supercite{Maani2009}取得了比JSVM QL高得多的性能，甚至比本文提出的方法性能还好。但是，为了得到适用于不同序列的鲁棒的模型参数，该工作中的方法需要更多的计算量去训练。而本文提出的方法所需计算量总是与JSVM相当的。据我们所知，在不显著增加计算量的情况下，码流截取很难取得较大的PSNR提升。
+
+\subsection{无参考截取实验}
+
+\begin{figure*}[!ht]
+	\centering
+	\subfloat[Bus]{
+		\includegraphics[width=0.5\textwidth]{figures/Bus-noref.png}}
+	\subfloat[City]{
+		\includegraphics[width=0.5\textwidth]{figures/City-noref.png}}
+	\qquad
+	\subfloat[Crew]{
+		\includegraphics[width=0.5\textwidth]{figures/Crew-noref.png}}
+	\subfloat[Harbour]{
+		\includegraphics[width=0.5\textwidth]{figures/Harbour-noref.png}}
+	\qquad
+	\subfloat[Football]{
+		\includegraphics[width=0.5\textwidth]{figures/Football-noref.png}}
+	\subfloat[Foreman]{
+		\includegraphics[width=0.5\textwidth]{figures/Foreman-noref.png}}
+	\qquad
+	\subfloat[Mobile]{
+		\includegraphics[width=0.5\textwidth]{figures/Mobile-noref.png}}
+	\subfloat[Soccer]{
+		\includegraphics[width=0.5\textwidth]{figures/Soccer-noref.png}}
+	\caption{无参考源时三种码流截取方案的性能比较}
+	\label{fig:extraction-performance-noref}
+\end{figure*}
+
+对于无参考源的应用场景，我们也做了相应的实验。图\ref{fig:extraction-performance}展示了全部八个测试序列在无参考截取实验中的性能比较结果，直观地表明了本文所提方案取得了较好的率失真性能。表\ref{tab:extraction-gain}列出了对应的PSNR提升数据，同样可以看出本文所提出的方案的优越性。
+
+\begin{table*}[t]
+	\centering
+	\caption{无参考源时本文提出的截取方案相比于JSVM的PSNR提升}
+	\label{tab:extraction-gain-noref}
+	\small
+	\begin{minipage}{1.0\linewidth}
+		\centering
+		\begin{tabular}{c|c|*{3}{p{0.9cm}<{\centering}|}*{4}{p{1.1cm}<{\centering}|}p{0.9cm}<{\centering}}
+			%% |l|l| to left justify each column entry
+			%% |c|c| to center each column entry
+			%% use of \rule[]{}{} below opens up each row
+			\hline \hline
+			\multicolumn{2}{c|}{序列名} &
+			{\em Bus} & {\em City} & {\em Crew} & {\em Football} & {\em Foreman} & {\em Harbour} & {\em Mobile} & {\em Soccer} \\ \hline 
+			\multirow{2}{*}{JSVM QL, $K$ = 32 \footnote{\label{footnote:JSVM_QL-noref} 与JSVM QL对比；优化窗口大小为32帧}}
+			& Max\footnote{\label{footnote:max-noref} 所有码率限制下的最大提升}
+			& 0.36 & 0.56 & 0.41 & 0.31 & 0.45 & 0.30 & 0.34 & 0.30 \\ \cline{2-10}
+			& Ave\footnote{\label{footnote:ave-noref} 所有码率限制下的平均提升}
+			& 0.14 & 0.22 & 0.13 & 0.12 & 0.17 & 0.11 & 0.14 & 0.11 \\ \hline
+			\multirow{2}{*}{JSVM Basic, $K$ = 32}
+			& Max & 0.48 & 0.97 & 0.54 & 0.25 & 0.47 & 0.38 & 0.60 & 0.53 \\ \cline{2-10}
+			& Ave & 0.23 & 0.48 & 0.23 & 0.12 & 0.28 & 0.21 & 0.31 & 0.26 \\ \hline
+		\end{tabular}
+	\end{minipage}
+\end{table*}
 
 \section{本章小结}
 
