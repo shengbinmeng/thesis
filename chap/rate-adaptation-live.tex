@@ -1,17 +1,12 @@
 \chapter{基于缓冲区分析的直播系统码率自适应算法}
 
-很多现有的实时流媒体系统都是建立在UDP协议之上，相比于TCP协议而言，在带宽较低以及丢包率较高的网络中，UDP是一个更好的选择。在这样的网络状况下，TCP协议的实用性很弱，因为它的重传机制以及拥塞控制导致低吞吐量，带来难以接受的传输延迟。而UDP带来的实时性效果显著强于TCP，因为传输的数据包大小更小，并且不确保数据的完整接受。
-
-然而，正因为UDP的不可靠的端对端传输，我们需要在更高层的协议之上进行大量特殊的处理，实现对传输过程进行控制以及对传输数据进行校验。而在另一方面，网络状况已经得到了持续快速的改善，使用TCP传输流媒体数据的可行性大大提高。因此，基于TCP的视频流媒体越来越成为关注的热点。渐进式HTTP视频流正广泛地应用在视频点播技术，并且通过HTTP Live Streaming（HLS）协议[1]扩展到视频直播领域。Real Time Streaming Protocol（RTSP）[2]以及Real Time Streaming Protocol（RTMP）[3]是两种业界广泛应用的，能够实现低延迟传输以及连接端进行消息交互的流媒体协议。这些基于TCP的技术很容易使用，并且在稳定的网络状况下具有良好的效果。然而，对于不稳定的移动网络，TCP吞吐量的变化仍然需要有效的应对，从而实现更好的流媒体用户体验。
-
-在大多数的相关研究在两个层面处理TCP吞吐量的变化：传输层以及应用层。在传输层中，主要有两类方案。一类是通过修改TCP协议的重传机制和拥塞控制机制来降低吞吐量的波动[4][5]，另一类是TCP传输层的信息建模来实现准确估计吞吐量从而选择最佳的视频编码参数。然而这一些方法难以具体实现，并且不能被应用在现有的基于TCP的应用层协议中。在应用层方面，研究主要集中在Dynamic Adaptive Streaming over HTTP（DASH）[6]，它提供了客户端动态切换码率的机制来实现连续而平滑的视频点播服务。基于DASH的方案也同样被应用在HLS中实现自适应的直播视频流。然而DASH的自适应机制针对接收端，而不是内容提供方，因此不能应用在用户生成内容(UGC)的直播系统中。
-
-在这篇论文中，我们提出一种通用的针对应用层的自适应码率控制方法来适应TCP吞吐量的变化，我们使用多缓冲模型来分析传输过程，并采用缓冲区的状态来评估网络状况。通过在这个模型获取到的信息，我们提出一种基于PID的自适应码率控制算法，能够灵敏地调节视频码率来匹配当前的网络吞吐量，从而在保证流畅播放的情况下提供最高能达到的视频质量。我们还对调节过程进行优化，使其尽可能稳定和准确。我们基于RTMP协议实现了手机视频直播系统，并采用了这种方法。我们在变化的网络状况下，实现了相对流畅的视频播放，并取得了高带宽利用率。
-这篇论文剩下的部分主要包含以下内容：第二部分是传输架构的概述，第三部分描述了多缓冲模型，第四部分详细介绍了基于PID的自适应码率控制算法，第五部分展示了在不同条件下的实验结果，第六部分进行了总结。
+在上一章中，我们以达尔文流媒体服务器作为平台为视频点播系统的传输过程设计了一个码率自适应算法。本章针对如今越来越流行的用户生成内容（User Generated Content, UGC）直播应用进行研究，提出了一个基于传输中缓冲区分析的码率自适应算法，来改善从数据产生设备向服务器上传数据的效率。
 
 \section{视频直播系统概述}
 
-在有些视频直播系统中，视频内容由服务器或者与服务器通过局域网连接的设备生成。在这种情形下，视频直播和视频点播具有很多共同点。在直播中服务器将动态生成的视频数据发送给客户端，和点播最主要的区别在于传输速率不能超过视频数据生成速率，因此当所有生成的数据都传输之后，客户端需要等待下一个数据片段就绪\supercite{Thang2014}。而在如今十分火热的用户生成内容（UGC）直播模式下，服务器本身不充当初始的内容产生方，在其他设备上持续生成的视频内容经过不确定且不可忽略的延迟传输到中转服务器。目前已经非常普及的智能手机成为了理想的内容产生方和接收方。图\ref{fig:07}展示了通用的手机视频直播系统的主要模块。集成了高效视频编码器的智能手机，将实时视频数据传输到接收服务器，在此同时，原始视频流被转码成多路具有不同码率的视频流。客户端可以通过当前网络环境选择最合适的码率，从服务器获取视频数据。
+在有些视频直播系统中，视频内容由服务器或者与服务器通过局域网连接的设备生成。在这种情形下，视频直播和视频点播具有很多共同点。在直播中服务器将动态生成的视频数据发送给客户端，和点播最主要的区别在于传输速率不能超过视频数据生成速率，因此当所有生成的数据都传输之后，客户端需要等待下一个数据片段就绪\supercite{Thang2014}。
+
+在UGC直播模式下，服务器本身不充当初始的内容产生方，在其他设备上持续生成的视频内容经过不确定且不可忽略的延迟传输到中转服务器。目前已经非常普及的智能手机成为了理想的内容产生方和接收方。图\ref{fig:07}展示了通用的手机视频直播系统的主要模块。集成了高效视频编码器的智能手机，将实时视频数据传输到接收服务器，在此同时，原始视频流被转码成多路具有不同码率的视频流。客户端可以通过当前网络环境选择最合适的码率，从服务器获取视频数据。
 
 \begin{figure}[h]
 	\centering
@@ -47,7 +42,7 @@
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width = 0.8\linewidth]{clip/20.png}
+	\includegraphics[width = 0.9\linewidth]{clip/20.png}
 	\caption{直播系统接收端数据关系\label{fig:20}}
 \end{figure}
 
@@ -94,7 +89,7 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width = 0.8\linewidth]{clip/21.png}
+	\includegraphics[width = 0.9\linewidth]{clip/21.png}
 	\caption{多缓冲区模型结构图\label{fig:21}}
 \end{figure}
 
@@ -109,9 +104,7 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 
 我们定义MSDU为我们能够完整传输或丢弃的最小的单元。在我们所讨论的系统中，MSDU为数据段。数据段的小大可以在两个方面对系统产生影响：（1）传输延迟，数据段中的数据越多，第一个数据段完整到达接收端需要的时间就越长；（2）自适应的灵敏度，一次自适应调整只有在正在进行的传输过程结束之后才会起作用。因此我们期望数据段的大小能够最小。
 
-在基于DASH的方案中，为了实现高度灵敏的切换，图像组（GOP）被设定为数据段[12]。一个GOP可以单独播放，包含了一个I帧以及多个P帧。当一个GOP被丢弃时，对其他的GOP没有影响。通常一个GOP的持续时间是1到5秒。
-
-在我们的方法中，我们将MSDU设置为视频帧，这样可以讲传输延迟最小化，以及将自适应的灵敏度最大化。当一帧被丢弃时，我们需要丢弃其整个GOP中后续的P帧，这样不会带来解码的错误。
+在基于DASH的方案中，为了实现高度灵敏的切换，图像组（GOP）被设定为数据段。一个GOP可以单独播放，包含了一个I帧以及多个P帧。当一个GOP被丢弃时，对其他的GOP没有影响。通常一个GOP的持续时间是1到5秒。而在我们的方法中，我们将MSDU设置为视频帧，这样可以将传输延迟最小化，以及将自适应的灵敏度最大化。当一帧被丢弃时，我们需要丢弃其整个GOP中后续的P帧，这样不会带来解码的错误。
 
 \subsection{状态变量选取}
 
@@ -132,10 +125,36 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 \label{eq:asb}
 \overline{S_{ASB}(t)} = \dfrac{1}{\tau} \int_0^\tau {S_{ASB}(t)}\: .
 \end{equation}
+在另一方面，为了减小不稳定性，我们对误差也进行量化，将其表示为：
+\begin{equation}
+e(t) = step \times \left \lfloor\dfrac{\varepsilon - \overline{S_{ASB}(t)}}{step} \right \rfloor,
+\end{equation}
+其中$step$是量化步长，并且$step<\varepsilon$。
 
-\subsection{算法简介}
+\subsection{算法流程}
 
-对于直播应用来讲，由于发送的码流是实时生成的，所以调整码率时直接改变编码器参数以改变生成码率即可，不需要涉及码流截取等数据源端的操作。但是，质量等级的概念仍然需要，它在这里变成了改变码率的单位。控制模型可以直接采用原始PID中的做法，用过程变量和$\varepsilon$的差值来计算比例、积分、微分这几个部分。具体的算法流程以及三个PID参数的选取和调优与直播系统中的相同，这里不再详述。
+对于直播应用来讲，由于发送的码流是实时生成的，所以调整码率时直接改变编码器参数以改变生成码率即可，不需要涉及码流截取等数据源端的操作。但是，质量等级的概念仍然需要，它在这里变成了改变码率的单位。控制模型可以直接采用原始PID中的做法，用过程变量和$\varepsilon$的差值来计算比例、积分、微分这几个部分。具体的算法流程如Algorithm\ref{algo:control-live}所示。三个PID参数的选取和调优与直播系统中的相同，这里不再详述。
+
+\begin{algorithm}
+	\caption{基于PID的直播码率自适应算法}
+	\label{algo:control-live}
+	\begin{algorithmic}
+		\WHILE{is\_started}
+		\STATE wait for check period
+		\STATE average\_s = get\_average\_ASB\_size()
+		\STATE error = get\_error(average\_s, set\_point)
+		\IF{error == 0}
+			\STATE last\_error = error
+			\STATE summation = 0
+		\ELSE
+			\STATE summation = summation + error
+			\STATE difference = error – last\_error
+			\STATE output = $K_p$*error + $K_i$*summation + $K_d$*difference
+			\STATE change\_bitrate(output)
+		\ENDIF
+		\ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
 
 \section{实验结果}
 
@@ -145,9 +164,9 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 
 \begin{figure}[!t]
 	\centering
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:09-1}\includegraphics[width=0.6\textwidth]{clip/09-1.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:09-2}\includegraphics[width=0.6\textwidth]{clip/09-2.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:09-3}\includegraphics[width=0.6\textwidth]{clip/09-3.png}}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:09-1}\includegraphics[width=0.8\textwidth]{clip/09-1.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:09-2}\includegraphics[width=0.8\textwidth]{clip/09-2.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:09-3}\includegraphics[width=0.8\textwidth]{clip/09-3.png}}
 	\caption{直播系统在不同测试条件下码率随时间变化的情况}
 	\label{fig:09}
 \end{figure}
@@ -161,9 +180,9 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 
 \begin{figure}[!t]
 	\centering
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.65\textwidth]{clip/14-1.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.65\textwidth]{clip/14-2.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.65\textwidth]{clip/14-3.png}}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.8\textwidth]{clip/14-1.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.8\textwidth]{clip/14-2.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.8\textwidth]{clip/14-3.png}}
 	\caption{直播系统在不同测试条件下播放时间占比的变化情况}
 	\label{fig:14}
 \end{figure}
