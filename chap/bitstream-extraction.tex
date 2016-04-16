@@ -95,12 +95,15 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 \end{equation}
 这个公式中$e_{full}$表示全部增强层数据包都参与解码得到的视频序列与原始序列之间的差值。这是编解码过程固有的失真，在一个数据包都不丢弃的时候也是存在的。
 
-在采用基于线性误差模型的失真估计之前，我们先做实验验证一下其准确性。该实验中的码流都是用JSVM编码器压缩得到的，编码采用了如图\ref{fig:GOP_Structure}所示的GOP结构，熵编码过程配置的是CABAC。每个码流基本层和增强层的QP分别为33和27。增强层通过配置Medium Grain Scalability (MGS)向量进一步划分为了2个MGS层，分别包含4个和12个变换系数。我们从码流中随机丢弃一组数据包，将得到的子流解码，然后比较实际的失真与通过线性误差模型估计的失真。解码用的是JSVM解码器，其他计算都通过MATLAB进行。对于序列{\em Foreman}的一个比较结果可参见图\ref{fig:model_verification}（为简单起见，只采用了前33帧）。图中的横轴代表帧序号，纵轴表示以MSE度量的失真。实线代表真实计算的失真，虚线代表用所提出的线性误差模型估计的失真。可以看到两条线非常接近，验证了用提出的模型做失真估计的准确性。我们对所有8个SVC标准序列都进行了实验，定量计算了估计误差，如表\ref{tab:estimation-error}所示。可以看到，平均估计误差只有5\%，进一步说明了模型的准确性。
+在采用基于线性误差模型的失真估计之前，我们先做实验验证一下其准确性。该实验中的码流都是用JSVM编码器压缩得到的，编码采用了如图\ref{fig:GOP_Structure}所示的GOP结构，熵编码过程配置的是CABAC。每个码流基本层和增强层的QP分别为33和27。增强层通过配置Medium Grain Scalability (MGS)向量进一步划分为了2个MGS层，分别包含4个和12个变换系数。我们从码流中随机丢弃一组数据包，将得到的子流解码，然后比较实际的失真与通过线性误差模型估计的失真。解码用的是JSVM解码器，其他计算都通过MATLAB进行。对于序列{\em Bus}、{\em Foreman}、{\em Soccer}，图\ref{fig:model_verification}分别给出了其中一个比较结果（为简单起见，只采用了前33帧）。图中的横轴代表帧序号，纵轴表示以MSE度量的失真。实线代表真实计算的失真，虚线代表用所提出的线性误差模型估计的失真。可以看到虚线和实线非常接近，验证了用提出的模型做失真估计的准确性。我们对所有8个SVC标准序列都进行了实验，定量计算了估计误差，如表\ref{tab:estimation-error}所示。可以看到，平均估计误差只有5\%，进一步说明了模型的准确性。
+
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width = 0.8\linewidth]{figures/ModelVerification.png}
-	\caption{{\em Foreman}序列估计失真与实际失真的比较 \label{fig:model_verification}}
+	\subfloat[{\em Bus}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Bus.png}} \\
+	\subfloat[{\em Foreman}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Foreman.png}} \\
+	\subfloat[{\em Soccer}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Soccer.png}} \\
+	\caption{不同序列估计失真与实际失真的比较 \label{fig:model_verification}}
 \end{figure}
 
 \begin{table}[h]
