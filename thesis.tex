@@ -35,6 +35,9 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 
+% 用于设置行距的包
+\usepackage{setspace}
+
 % 设定文档的基本信息。
 \pkuthssinfo{
 	cthesisname = {博士研究生学位论文}, ethesisname = {Doctor Thesis},
@@ -78,13 +81,14 @@
 	% 以下为正文部分，默认要进行章节编号。
 	\mainmatter
 	% 各个章节
+	\begin{spacing}{1.66}
 	\include{chap/introduction}
 	\include{chap/related-work}
 	\include{chap/bitstream-extraction}
 	\include{chap/rate-adaptation}
 	\include{chap/rate-adaptation-live}
 	\include{chap/conclusion}
-
+	\end{spacing}
 	% 排版参考文献列表。
 	\addcontentsline{toc}{chapter}{参考文献}
 	{
