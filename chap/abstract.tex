@@ -9,6 +9,8 @@
 \item {基于缓冲区分析的直播系统码率自适应算法}\\
 在视频直播中，由于数据是实时产生的，其传输过程与视频点播有所不同。视频数据需要先上传到服务器，然后由服务器分发到观看者进行播放。本文为这个过程中的上传阶段增加了码率自适应的特性：首先通过详细分析系统整个传输过程中各个缓冲区的关系，建立了一个多缓冲区模型；然后把上述点播系统中用到的PID方法与多缓冲区模型相结合，提出了一个有效的码率自适应算法。相比于没有自适应的上传过程，带宽的利用率得到了提升，视频播放的连续性也得到了改善。
 \end{enumerate}
+
+本文提出的基于可伸缩视频编码的自适应点播系统已经在www.7dlive.com上线运行，而针对直播的码率自适应方法正在由美图公司的美拍团队集成到其手机应用中。
 \end{spacing}
 \end{cabstract}
 
@@ -22,4 +24,6 @@ When and how to adjust the bitrate according to the bandwidth change is another 
 \item {Rate adaptation algorithm for live streaming systems based on analysis of data buffers}\\
 In live video streaming systems, the data are generated in real time; therefore, the transmission process is also different from that of VoD systems. The video data should first be uploaded to a server, then distributed to watchers by the server. This paper proposes to add adaptation to the uploading stage. A multi-buffer model is built based on analysis of the several data buffers during the transmission, and it is combined with the PID method to provide rate adaptation effectively. Compared with non-adaptive uploading, the bandwidth utilization is increased and the playback continuity is also improved.
 \end{enumerate}
+
+The adaptive VoD system proposed by this paper has already been running at www.7dlive.com, and the rate adaptation algorithm for live streaming is currently being integrated into the related mobile applications of Meitu Inc.
 \end{eabstract}
