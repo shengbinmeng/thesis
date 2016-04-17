@@ -1,27 +1,29 @@
 \chapter{采用线性误差模型的可伸缩视频码流截取方案}
 
-能够调整数据源的码率是流媒体系统码率自适应的前提条件。对于SVC视频而言，这意味着从整个码流中截取出一部分数据包。如何在给定的码率下使得截取的失真最小，是码流截取问题的关键。在本章中，我们提出一个线性误差模型和一个基于贪心思想的优先级赋值算法来解决这个问题。
+能够调整数据源的码率是流媒体系统码率自适应的前提条件。对于SVC视频而言，这意味着从整个码流中截取出一部分数据包来得到不同的低码率子流。如何在给定的码率限制下使得截取的失真最小，是码流截取问题的关键。在本章中，我们提出一个线性误差模型和一个基于贪心思想的优先级赋值算法来解决这个问题。
 
 \section{线性误差模型}
 
 \subsection{模型推导}
 
-在H.264/AVC中，解码过程具有线性性质\supercite{Winken2008}。在不考虑舍入、截断和去块滤波的情况下，解码的主要步骤，如预测、变换、量化等，都可以近似认为是线性操作。基于此，整个解码过程可以用矩阵的形式描述如下：
+在H.264/AVC中，解码过程具有线性性质\supercite{Winken2008}。在不考虑舍入、截断和去块滤波的情况下，解码的主要步骤，如预测、变换、量化等，都可以近似认为是线性操作。在这种近似下，一个图像组（Group Of Pictures，GOP）的重建像素可以看作如下这三部分的线性组合：该图像组的已重建像素、残差、静态预测子。假设这个图像组中有$K$帧，每一帧的宽度和高度分别为$W$和$H$，则这个图像组的解码重建过程可以用矩阵的形式描述如下：
 
 \begin{equation}
 \label{eq:linear}
 s = {\rm\bf M} \cdot s + {\rm\bf T} \cdot c + p \: .
 \end{equation}
 
-该式子意味着，一个图像组（GOP）的重建像素， $s$，可以看作如下这三部分的线性组合：该图像组的已重建像素、残差、静态预测子。在公式(\ref{eq:linear})中，$c$指代变换系数，$p$是所谓静态预测子；$\rm\bf M$和$\rm\bf T$都是方阵，${\rm\bf M} \cdot s$得到的结果是运动校正预测信号，${\rm\bf T} \cdot c$得到的结果是残差。$\rm\bf M$的实际值由所选择的宏块类型、参考帧索引和运动向量决定，而$\rm\bf T$的实际值取决于所选的量化参数（QP）。
+令$N = K \times W \times H$，则在公式(\ref{eq:linear})中，$s$是$N \times 1$维列向量，指代重建像素；$c$是$N \times 1$维列向量，指代变换系数；$p$是$N \times 1$维列向量，指代静态预测值；$\rm\bf M$和$\rm\bf T$都是$N \times N$维的方阵，从而使得${\rm\bf M} \cdot s$得到的结果是运动校正预测信号，${\rm\bf T} \cdot c$得到的结果是残差。$\rm\bf M$的实际值由所选择N的宏块类型、参考帧索引和运动向量决定，而$\rm\bf T$的实际值取决于所选的量化参数（Quantization Parameter，QP）。
 
-将上述线性解码模型运用到SVC的质量可伸缩中，可以得到一个线性误差模型（LEM）。根据公式(\ref{eq:linear})，对于一个只包含基本层的码流，有：
+将上述解码过程的线性模型运用到SVC的质量可伸缩中，可以得到一个线性误差模型（Linear Error Model，LEM）。根据公式(\ref{eq:linear})，对于一个只包含基本层的码流，有：
 \begin{equation}
+\vspace{10pt}
 \label{eq:base0}
 s_{B} = {\rm\bf M} \cdot s_{B} + {\rm\bf T}_{B} \cdot c_{B} + p \: ,
 \end{equation}
 其中带下标$B$的表示是基本层变量。在质量可伸缩中，增强层主要是变换系数的精细化。因此，若一个增强层的数据包集合记为$I_1$，则含有该增强层的码流解码时重建关系可表示为：
 \begin{equation}
+\vspace{10pt}
 \label{eq:subset1}
 s_{I_1} = {\rm\bf M} \cdot s_{I_1} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i \in I_1}{\rm\bf T}_i \cdot c_i \Big) + p \: ,
 \end{equation}
@@ -29,28 +31,34 @@ s_{I_1} = {\rm\bf M} \cdot s_{I_1} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i 
 
 同样的，对于一个含有增强层数据包集合$I_2$的码流，有：
 \begin{equation}
+\vspace{10pt}
 \label{eq:subset2}
 s_{I_2} = {\rm\bf M} \cdot s_{I_2} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i \in I_2}{\rm\bf T}_i \cdot c_i \Big) + p \: .
 \end{equation}
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width = 0.5\linewidth]{figures/Subset.jpg}
+	\vspace{10pt}
+	\includegraphics[width = 0.8\linewidth]{figures/Subset.jpg}
+	\vspace{10pt}
 	\caption{增强层数据包集合关系示例 \label{fig:subset}}
 \end{figure}
 
 如果$I_1$是$I_2$的子集，那么二者的重建误差就可以由公式(\ref{eq:subset2})与(\ref{eq:subset1})相减得到：
 \begin{equation}
+\vspace{10pt}
 \label{eq:minus1}
 (s_{I_2} - s_{I_1}) = {\rm\bf M} \cdot (s_{I_2} - s_{I_1}) + \Big( \sum_{i \in I_2}{\rm\bf T}_i \cdot c_i - \sum_{i \in I_1}{\rm\bf T}_i \cdot c_i \Big) \: ,
 \end{equation}
 \begin{equation}
+\vspace{10pt}
 \label{eq:minus2}
 \Rightarrow e = s_{I_2} - s_{I_1} = ({\rm\bf I - M})^{-1} \cdot \Big( \sum_{i \in I_2}{\rm\bf T}_i \cdot c_i - \sum_{i \in I_1}{\rm\bf T}_i \cdot c_i \Big) \: .
 \end{equation}
 
 特别地，如果$I_2$和$I_1$的差别只有一个增强层数据包$j$，也就是说$I_2 \setminus I_1 = \{j\}$（如图\ref{fig:subset}所示），那么根据公式(\ref{eq:minus2})，这两个重建序列的差为：
 \begin{equation}
+\vspace{10pt}
 \label{eq:error_j}
 e_j = ({\rm\bf I - M})^{-1} \cdot {\rm\bf T}_j \cdot c_j \: .
 \end{equation}
@@ -59,6 +67,7 @@ e_j = ({\rm\bf I - M})^{-1} \cdot {\rm\bf T}_j \cdot c_j \: .
 
 一旦获取了所有增强层数据包对应的误差向量，那么丢弃任意一个增强层数据包子集所导致的失真就可以用这个子集中的数据包的误差向量之和来估计。举例来说，如果增强层数据包$x$, $y$, $z$从一个码流中被丢弃，那么丢弃前后的重建序列之差应该为：
 \begin{equation}
+\vspace{10pt}
 e = e_x + e_y + e_z.
 \end{equation}
 这个简单的相加之所以合理有两方面的原因。第一，不像MSE或PSNR，误差向量仅仅是像素的差值，并不涉及二次方运算。第二，每个增强层数据包在重建中会各自对像素进行精细化，其效果是叠加的（参见前面的推导过程）。
@@ -71,7 +80,8 @@ e = e_x + e_y + e_z.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width = 0.9\linewidth]{figures/GOP-Structure.png}
+\vspace{10pt}
+\includegraphics[width = 1.0\linewidth]{figures/GOP-Structure.png}
 \caption{SVC码流中的图像组（GOP）结构示例 \label{fig:GOP_Structure}}
 \end{figure}
 
@@ -79,26 +89,31 @@ e = e_x + e_y + e_z.
 
 为了获取所有的误差向量，所需的解码次数大约等于增强层的层数$(L_Q - 1)$乘以时间层的层数$L_T$。对于图\ref{fig:GOP_Structure}中的例子而言，$L_Q = 3$，$L_T = 4$，所以所需的解码次数照此计算将会是$(3 - 1) \times 4 = 8$。然而，我们还需要额外的$L_Q - 1 = 2$次解码，来分离“关键帧”\supercite{H.264-Overview}（图\ref{fig:GOP_Structure}中的帧0、8、16）中数据包的失真影响。关键帧中增强层数据包的丢弃将会给它两边相邻的两个GOP都带来失真。例如，丢弃4号数据包带来的失真影响范围将会从帧1直到帧15，从而与帧0和帧16中的数据包的失真影响互相交叠。因此，关键帧同一位置的增强层数据包（2、4、20号数据包）应该被分为两个组：一组包含偶数GOP的关键帧数据包（2和20号包），另一组包含奇数GOP的（4号包）。于是，误差向量获取真正所需要的解码次数应为：
 \begin{equation}
+\vspace{10pt}
 N = (L_Q - 1) \cdot (L_T + 1).
 \end{equation}
 这与JSVM中Quality Layer信息的获取所需的解码次数大致相当。
 
 \subsection{失真估计与模型验证}
+\vspace{10pt}
 \label{subsec:distortion-estimation}
 
 基于线性误差模型，我们可以估计丢弃任意增强层数据包组合带来的失真，只需把所丢弃的每一个数据包对应的误差向量加起来即可。
 
 例如，对于一个通过丢弃数据包集合$I_x$而得到的子流来说，它解码出来的视频序列与原始序列间的差值可以估计为：
 \begin{equation}
+\vspace{10pt}
 \label{eq:subset_error}
 e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 \end{equation}
 这个公式中$e_{full}$表示全部增强层数据包都参与解码得到的视频序列与原始序列之间的差值。这是编解码过程固有的失真，在一个数据包都不丢弃的时候也是存在的。
 
-在采用基于线性误差模型的失真估计之前，我们先做实验验证一下其准确性。该实验中的码流都是用JSVM编码器压缩得到的，编码采用了如图\ref{fig:GOP_Structure}所示的GOP结构，熵编码过程配置的是CABAC。每个码流基本层和增强层的QP分别为33和27。增强层通过配置Medium Grain Scalability (MGS)向量进一步划分为了2个MGS层，分别包含4个和12个变换系数。我们从码流中随机丢弃一组数据包，将得到的子流解码，然后比较实际的失真与通过线性误差模型估计的失真。解码用的是JSVM解码器，其他计算都通过MATLAB进行。对于序列{\em Bus}、{\em Foreman}、{\em Soccer}，图\ref{fig:model_verification}分别给出了其中一个比较结果（为简单起见，只采用了前33帧）。图中的横轴代表帧序号，纵轴表示以MSE度量的失真。实线代表真实计算的失真，虚线代表用所提出的线性误差模型估计的失真。可以看到虚线和实线非常接近，验证了用提出的模型做失真估计的准确性。我们对所有8个SVC标准序列都进行了实验，定量计算了估计误差，如表\ref{tab:estimation-error}所示。可以看到，平均估计误差只有5\%，进一步说明了模型的准确性。
+在采用基于线性误差模型的失真估计之前，我们先做实验验证一下其准确性。该实验中的码流都是用JSVM编码器压缩得到的，编码采用了如图\ref{fig:GOP_Structure}所示的GOP结构，熵编码过程配置的是CABAC。每个码流基本层和增强层的QP分别为33和27。增强层通过配置Medium Grain Scalability (MGS)向量进一步划分为了2个MGS层，分别包含4个和12个变换系数。我们从码流中随机丢弃一组数据包，将得到的子流解码，然后比较实际的失真与通过线性误差模型估计的失真。解码用的是JSVM解码器，其他计算都通过MATLAB进行。
+
+对于序列{\em Bus}、{\em Foreman}、{\em Soccer}，图\ref{fig:model_verification}分别给出了其中一个比较结果（为简单起见，只采用了前33帧）。图中的横轴代表帧序号，纵轴表示以MSE度量的失真。实线代表真实计算的失真，虚线代表用所提出的线性误差模型估计的失真。可以看到虚线和实线非常接近，验证了用提出的模型做失真估计的准确性。我们对所有8个SVC标准序列都进行了实验，定量计算了估计误差，如表\ref{tab:estimation-error}所示。可以看到，平均估计误差只有5\%，进一步说明了模型的准确性。
 
 
-\begin{figure}[h]
+\begin{figure}[!ht]
 	\centering
 	\subfloat[{\em Bus}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Bus.png}} \\
 	\subfloat[{\em Foreman}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Foreman.png}} \\
@@ -108,6 +123,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{table}[h]
 	\centering
+	\vspace{10pt}
 	\caption{采用线性误差模型进行不同序列失真估计的估计误差}
 	\label{tab:estimation-error}
 	\begin{tabular}{*{8}{p{1.35cm}<{\centering}|}{p{1.3cm}<{\centering}}}
@@ -126,6 +142,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 对于一个数据包，我们采用如下的码率失真影响来度量它的优先级：
 \begin{equation}
+\vspace{10pt}
 \label{eq:rd_impact}
 \Phi = \dfrac{\partial D}{\partial R} \: ,
 \end{equation}
@@ -141,29 +158,37 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 对于很长的视频序列，往往将其分为一个个优化窗口进行操作。每个窗口含有一定数量的帧，优先级赋值和码流截取都在每个窗口中独立地进行。假设优化窗口的长度为$K$，也就是说每次处理$K$帧；再假设每一帧包含的质量伸缩层个数为$L_Q$，也就是一个基本层加$L_Q-1$个增强层。这样的话所有能够被丢弃的增强层数据包的个数将是$K \cdot (L_Q-1)$。在每一次贪心选择的步骤中，当前可以被丢弃的数据包只能是每一帧最上层的数据包（因为下层的包被上层所依赖），也就是最多有$K$个。在这样的优化窗口中进行优先级赋值的过程具体描述如下：
 
 \begin{description}
+	\vspace{10pt}
 	\item[1)] 初始状态下，把整个序列的误差向量$e_{seq}$设为$e_{full}$（所有增强层数据包都在时解码出的序列与原始序列的差值，参见公式(\ref{eq:subset_error})的说明）。
+	\vspace{10pt}
 	\item[2)] 在所有当前可以丢弃的数据包中，找到对序列具有最小码率失真影响的数据包$m$，即寻找$m$，使得：
 	\begin{equation}
+	\vspace{10pt}
 	\label{eq:R-D_impact_m}
 	\Phi_m = \min_{i \in I_{top}} \Phi_i \: ,
 	\end{equation}
 	其中$I_{top}$代表当前处于每一帧最上层的数据包，现在只有它们是可以丢弃的。一个包的失真影响基于公式(\ref{eq:rd_impact})计算如下： 
 	\begin{equation}
+	\vspace{10pt}
 	\label{eq:R-D_impact_i}
 	\Phi_i = \dfrac{\partial D}{\partial R} = \dfrac{PSNR(e_{seq}) - PSNR(e_{seq} + e_i)}{SIZE(i)} \: ,
 	\end{equation}
 	其中$SIZE(i)$是数据包$i$的大小，$PSNR(*)$是由误差向量求取PSNR的函数。PSNR是由MSE定义的，而MSE就是误差向量的元素平方后的均值。
+	\vspace{10pt}
 	\item[3)]将数据包$m$从码流中移除，并把它的误差向量加到序列误差向量中：
 	\begin{equation}
 	\label{eq:error_update}
 	e_{seq} = e_{seq} + e_m \: .
 	\end{equation}
+	\vspace{10pt}
 	\item[4)]重复2)到3)的步骤，直到所有的增强层数据包全部被移除，且每个包都根据它被移除的次序被赋予了优先级值。
+	\vspace{10pt}
 \end{description}
 
-上面描述的过程用算法伪码表示可参见下面的Algorithm\ref{algo:greedy}。
+上面描述的过程用算法伪码表示可参见Algorithm\ref{algo:greedy}。
 
 \begin{algorithm}
+	\vspace{10pt}
 	\caption{优先级赋值的贪心算法}
 	\label{algo:greedy}
 	\begin{algorithmic}
@@ -177,6 +202,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 		\STATE 将$e_{seq}$更新为$e_{seq} + e_m$，并将$q$更新为$q+1$；
 		\ENDWHILE
 	\end{algorithmic}
+	\vspace{10pt}
 \end{algorithm}
 
 从伪码很容易看出优先级赋值算法的时间复杂度为$O(K^2)$。需要指出的是，在优先级赋值过程中的这些计算量相比于误差向量获取过程中解码的计算量来说是微不足道的。通过增加优化窗口大小$K$，可以每次比较更多的数据包来确定优先级，因此有望得到更优的截取结果。然而，这样做不仅增加计算量，更重要的是会使存储误差向量所需的内存有显著的增加。此外，如果优先级值采用NALU头信息中的字段存储的话，因为该字段只有6个比特，所支持的范围是0～63，这也限制了$K$的大小。
@@ -188,6 +214,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 在缺少原始序列的情况下，我们无法计算上面提到的$e_{full}$。一个简单直接的想法是把$e_{full}$置为0，也就是所有失真都是基于整个码流完全重建的像素来计算，而不是基于原始序列。但我们发现这样做效果并不好，算法过程中的PSNR值太大，无法很好的反映实际失真。这是因为丢弃一些数据包后，与完全重建像素比较起来并不能带来很大的误差，据此计算PSNR是不合适的。为了解决这个问题，我们改为直接用所有像素的均方差（MSE）作为失真的度量标准，不再计算PSNR。即，公式(\ref{eq:R-D_impact_i})应修改为：
 \begin{equation}
+\vspace{10pt}
 \label{eq:R-D_impact_i_noref}
 \Phi_i = \dfrac{\partial D}{\partial R} = \dfrac{MSE(e_{seq}) - MSE(e_{seq} + e_i)}{SIZE(i)} \: ,
 \end{equation}
@@ -203,6 +230,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{figure}[!ht]
 	\centering
+	\vspace{10pt}
 	\includegraphics[width = 1.0\linewidth]{eps/extraction-flow}
 	\caption{使用优先级值进行实际码流截取的程序流程图\label{fig:extraction-flow}}
 \end{figure}
@@ -256,6 +284,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{table*}[t]
 	\centering
+	\vspace{10pt}
 	\caption{本文提出的截取方案相比于JSVM的PSNR提升}
 	\label{tab:extraction-gain}
 	\small
@@ -320,6 +349,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{table*}[t]
 	\centering
+	\vspace{10pt}
 	\caption{无参考源时本文提出的截取方案相比于JSVM的PSNR提升}
 	\label{tab:extraction-gain-noref}
 	\small
@@ -348,6 +378,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{table*}[t]
 	\centering
+	\vspace{10pt}
 	\caption{不同的无参考截取方法对比：相对于JSVM QL的平均PSNR提升}
 	\label{tab:methods-compare}
 	\small

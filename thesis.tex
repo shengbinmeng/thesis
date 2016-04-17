@@ -50,7 +50,7 @@
 	cmajor = {计算机应用技术}, emajor = {Computer Science},
 	direction = {数字视频信息处理},
 	cmentor = {郭宗明\ 研究员}, ementor = {Prof.\ Zongming Guo},
-	ckeywords = {视频流媒体，码流截取，码率自适应，视频直播}, ekeywords = {Video streaming, Bitstream extraction, Rate adaptation, Live video}
+	ckeywords = {视频流媒体，码流截取，码率自适应，视频直播}, ekeywords = {Video streaming, Bitstream extraction, Rate adaptation, Live streaming}
 }
 
 \begin{document}
@@ -81,7 +81,7 @@
 	% 以下为正文部分，默认要进行章节编号。
 	\mainmatter
 	% 各个章节
-	\begin{spacing}{1.66}
+	\begin{spacing}{1.5}
 	\include{chap/introduction}
 	\include{chap/related-work}
 	\include{chap/bitstream-extraction}
@@ -96,12 +96,15 @@
 	\bibliographystyle{chinese}
 	\bibliography{thesis}
 	}
-
 	% 以下为正文之后的部分，默认不进行章节编号。
 	\backmatter
 	% 致谢。
+	\begin{spacing}{1.5}
 	\include{chap/acknowledge}
+	\end{spacing}
+	% 成果。
 	\include{chap/achievement}
+	% 原创声明和使用授权说明。
 	\include{chap/originauth}
 \end{document}
 

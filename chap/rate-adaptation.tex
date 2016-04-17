@@ -1,6 +1,6 @@
 \chapter{基于PID控制思想的点播系统码率自适应算法}
 
-在实际网络环境中，带宽波动是不可避免的。对于一个视频流媒体系统而言，只有根据带宽变化来自适应地调整发送码率才能为用户提供更好的服务。在上一章中，我们通过可伸缩视频的码流截取，使得码率能够调整；在本章中，我们主要关注如何调整。由于视频码率与视频质量一般来说是直接相关的（高码率对应高质量），调整码率也就是调整所传送视频的质量。因此，本章所解决的问题又被称为质量控制问题。我们将基于经典控制实践中的PID思想，设计一个综合考虑带宽的历史状况、当前状态和未来趋势的码率自适应算法，从而提高发送视频的总体质量和平滑度。
+在实际网络环境中，带宽波动是不可避免的。对于一个视频流媒体系统而言，只有根据带宽变化来自适应地调整发送码率才能为用户提供更好的服务。在上一章中，我们通过可伸缩视频的码流截取，使得码率能够调整；在本章中，我们主要关注如何调整。由于视频码率与视频质量一般来说是直接相关的（高码率对应高质量），调整码率也就是调整所传送视频的质量。因此，本章所解决的问题又被称为质量控制问题。我们将基于经典控制实践中的PID思想，为采用达尔文流媒体服务器的直播系统设计一个综合考虑带宽的历史状况、当前状态和未来趋势的码率自适应算法，提高所发送视频的总体质量和平滑度。
 
 \section{PID控制器简介}
 
@@ -8,18 +8,21 @@ PID控制器是一个在工业控制系统中常用的闭环反馈控制器。PI
 
 PID控制器的控制输出一般如下定义：
 \begin{equation}
+\vspace{10pt}
 \label{eq:pid-output}
 u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \frac{d}{{dt}}e(t) \: ,
 \end{equation}
-其中$e(t)$指代过程变量与控制目标在时刻$t$的误差，$K_p$、$K_i$、$K_d$是三个可调参数，依次称为比例增益、积分增益和微分增益。公式(\ref{eq:pid-output})的结果通过某种方式来影响系统状态，使得过程变量朝着控制目标变化，如图\ref{fig:18}\footnote{http://en.wikipedia.org/wiki/PID\_controller}所示。
+其中$e(t)$指代过程变量与控制目标在时刻$t$的误差，$K_p$、$K_i$、$K_d$是三个可调参数，依次称为比例增益、积分增益和微分增益。公式(\ref{eq:pid-output})的结果通过某种方式来影响系统状态，使得过程变量朝着控制目标变化，如图\ref{fig:18}\footnote{http://en.wikipedia.org/wiki/PID\_controller}所示。在PID控制器中，比例部分直接对应着当前系统误差，积分部分反映了过去一段时间内误差的累积，微分部分则表示对误差变化情况的预测。将这三个部分结合起来作为控制器输出，能够使系统综合考虑过去、现在和未来的状态，更好地进行调整决策。
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width = 0.8\linewidth]{clip/18.png}
+	\vspace{10pt}
+	\includegraphics[width = 1.0\linewidth]{clip/18.png}
+	\vspace{10pt}
 	\caption{PID控制器原理示意图\label{fig:18}}
 \end{figure}
 
-作为一个灵活有效的控制技术，PID可以被用来解决各种各样的控制问题\supercite{Wong2004}\supercite{Li1999}。在本文的工作中，我们基于它设计了一个码率自适应算法，用来控制视频流媒体中的视频质量。
+作为一个灵活有效的控制技术，PID可以被用来解决各种各样的控制问题，例如视频编码过程中的码率控制\supercite{Li1999,Wong2004,Shen2009,Yang2010,Zhou2011}。在本文的工作中，我们基于它设计了一个码率自适应算法，用来控制视频流媒体中的视频质量。
 
 \section{基于PID的码率自适应}
 
@@ -31,15 +34,19 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 
 \subsection{过程变量和控制目标}
 
-在本文所提出的质量控制算法中，所选取的过程变量称为“实际与检测间隔比”。下面介绍其具体定义。
+本章所提出的质量控制算法主要是针对达尔文流媒体服务器的视频传输过程，所选取的过程变量称为“实际与检测间隔比”。下面介绍其具体定义。
 
-\begin{figure}[h]
+\begin{figure}[t]
+	\vspace{10pt}
 	\centering
-	\includegraphics[width = 0.9\linewidth]{figures/Intervals.png}
+	\includegraphics[width = 1.0\linewidth]{figures/Intervals.png}
+	\vspace{10pt}
 	\caption{达尔文流媒体服务器中的两个时间线 \label{fig:intervals}}
 \end{figure}
 
-在达尔文流媒体服务器中，有两个时间线非常重要。第一个是推送时间线（push time），也就是视频数据包被推送到缓冲区的时间；第二个是播放时间线（play time），也就是数据包应该在播放中被显示的时间（通常记作该数据包的PTS）。这两个时间线的关系如图\ref{fig:intervals}所示。服务器程序会定时检测这两个时间线，并根据数据包的延迟来决定是否需要调整发送的视频质量。图\ref{fig:intervals}中的两个间隔，即检测间隔（check interval）和实际间隔（actual interval），值得我们注意。在理想情况下，每次检测间隔中服务器推送的数据量应该恰好能实际播放等于检测间隔的一段时间，也就是\textit{actual\_interval} = \textit{check\_interval}。如果实际间隔小于检测间隔，说明这段时间内推送了较少的数据，推送数据变慢很可能是带宽有所下降。反过来，如果实际间隔大于检测间隔，说明这段时间内推送了较多的数据，意味着网络条件良好且数据被快速推向客户端。这两个间隔的比值，也就是所谓的“实际与检测间隔比”，能够反映当前推送的速率是否与网络带宽相符。
+在达尔文流媒体服务器中，有两个时间线非常重要。第一个是推送时间线（push time），也就是视频数据包被推送到缓冲区的时间；第二个是播放时间线（play time），也就是数据包应该在播放中被显示的时间（通常记作该数据包的PTS）。这两个时间线的关系如图\ref{fig:intervals}所示。服务器程序会定时检测这两个时间线，并根据数据包的延迟来决定是否需要调整发送的视频质量。
+
+图\ref{fig:intervals}中的两个间隔，即检测间隔（check interval）和实际间隔（actual interval），值得我们注意。在理想情况下，每次检测间隔中服务器推送的数据量应该恰好能实际播放等于检测间隔的一段时间，也就是\textit{actual\_interval} = \textit{check\_interval}。如果实际间隔小于检测间隔，说明这段时间内推送了较少的数据，推送数据变慢很可能是带宽有所下降。反过来，如果实际间隔大于检测间隔，说明这段时间内推送了较多的数据，意味着网络条件良好且数据被快速推向客户端。这两个间隔的比值，也就是所谓的“实际与检测间隔比”，能够反映当前推送的速率是否与网络带宽相符。
 
 “实际与检测间隔比”适合用作质量控制有三方面的原因：
 \begin{itemize}
@@ -53,31 +60,37 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 在通常的PID控制器中，控制输出是用过程变量与控制目标之间的差值进行比例、积分、微分求取出来的。考虑到我们所选的过程变量是一个比例，且控制目标是1，本文对通常的PID控制器做了修改，提出了一个基于比例的模型。在这个模型中，过程变量直接被用来计算控制器输出，而且所有求差的运算都被适当的改为了求比例的运算，以保持模型的合理正确性，如下所示：
 
 \begin{equation}
+\vspace{10pt}
 \label{eq:ut}
 {u_t} = {K_p} \cdot E_p^t + {K_i} \cdot E_i^t + {K_d} \cdot E_d^t ,
 \end{equation}
 
 \begin{equation}
+\vspace{10pt}
 \label{eq:ep}
 E_p^t = \frac{{actual\_interva{l_t}}}{{check\_interva{l_t}}} ,
 \end{equation}
 
 \begin{equation}
+\vspace{10pt}
 \label{eq:ei}
 E_i^t = \frac{{long\_actual\_interva{l_t}}}{{long\_check\_interva{l_t}}} ,
 \end{equation}
 
 \begin{equation}
+\vspace{10pt}
 \label{eq:ed}
 E_d^t = E_p^t/E_p^{t - 1} ,
 \end{equation}
 
 \begin{equation}
+\vspace{10pt}
 \label{eq:long-actual}
 long\_actual\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {actual\_interva{l_\tau}} ,
 \end{equation}
 
 \begin{equation}
+\vspace{10pt}
 \label{eq:long-check}
 long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}} .
 \end{equation}
@@ -91,11 +104,15 @@ long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}
 本文提出的码率自适应算法描述如Algorithm\ref{algo:control}所示。相比于其他的调度策略，这个基于PID的自适应算法具有以下几个优点：
 \begin{itemize}
 	\item 首先，该算法不仅仅依据当前状态或者固定时间点的信息来做决策，因此质量调整可以在任何合适的时间发生。
+	\vspace{10pt}
 	\item 其次，因为PID模型（微分部分）在某种程度上考虑了对未来的预测，该算法能够判断带宽在未来一段时间内是否会变得足够大或足够小，因此能避免一些不必要的调整。
+	\vspace{10pt}
 	\item 最后，该算法并不一定一次只调整一个质量等级，这就使得当带宽剧烈下降时能够快速下调质量以保证流畅播放，而当系统启动时能够快速上调质量以使用户尽早收到更清晰的视频。
+	\vspace{10pt}
 \end{itemize}
 
 \begin{algorithm}
+	\vspace{10pt}
 	\caption{基于PID的码率自适应算法}
 	\label{algo:control}
 	\begin{algorithmic}
@@ -115,14 +132,16 @@ long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}
 		\ENDIF
 		\STATE 根据新的质量等级发送数据包
 	\end{algorithmic}
+	\vspace{10pt}
 \end{algorithm}
 
 \subsection{参数选取与调优}
 
 \begin{figure}[!t]
 	\centering
-	\subfloat[]{\label{fig:19-1}\includegraphics[width=0.6\textwidth]{clip/19-1.png}} \\
-	\subfloat[]{\label{fig:19-2}\includegraphics[width=0.6\textwidth]{clip/19-2.png}}
+	\vspace{10pt}
+	\subfloat[]{\label{fig:19-1}\includegraphics[width=0.8\textwidth]{clip/19-1.png}} \\
+	\subfloat[]{\label{fig:19-2}\includegraphics[width=0.8\textwidth]{clip/19-2.png}}
 	\caption{PID控制器中参数$K_i$、$K_d$对系统的影响}
 	\label{fig:19}
 \end{figure}
@@ -144,20 +163,25 @@ K_d = K_u \cdot T_u/8.
 
 \section{实验结果}
 
+本章提出的基于PID的码率自适应算法集成在了达尔文流媒体服务器中，本节通过对比实验来验证该算法的有效性。
+
 \subsection{实验配置}
 
-为了简单起见，在第一部分实验中，我们先用可伸缩视频内置的伸缩层级组合成质量等级来用于质量控制。该定义的基本思想是将视频码流中的数据包分成若干组。分组的依据是这个数据包所属的伸缩层，也就是储存在NALU头信息中的层ID字段。表\ref{tab:sub-stream}展示了组ID与层ID的对应关系。我们所用的测试码流含有3个质量层和3个时间层，因此其中的数据包被分为9个组。质量等级被定义为组ID不大于等级值的所有组的合集。例如，质量等级2含有组0到组2内的所有数据包，因此将包含所有的时间层，但只有质量基本层；质量等级5含有组0到组5，于是将进一步包括第一个质量增强层的数据包。类似这样，随着质量等级的升高，越来越多的增强层数据包被累积进来，视频质量逐渐提升；与此同时，码率也越来越高，因为更好的质量显然需要更高的码率。我们测试用的完整码流码率是1587kbps，对应着最高的质量等级。这样用伸缩层来构造质量等级可以不用额外的数据，只需解析码流中本来已经包含的层ID即可，实现起来比较简单。
+为了简单起见，我们先用可伸缩视频内置的伸缩层级组合成质量等级来用于质量控制。该定义的基本思想是将可伸缩视频码流中的数据包分成若干组。分组的依据是这个数据包所属的伸缩层，也就是储存在NALU头信息中的层ID字段。表\ref{tab:sub-stream}展示了组ID与层ID的对应关系。我们所用的测试码流含有3个质量层和3个时间层，因此其中的数据包被分为9个组。质量等级被定义为组ID不大于等级值的所有组的合集。例如，质量等级2含有组0到组2内的所有数据包，因此将包含所有的时间层，但只有质量基本层；质量等级5含有组0到组5，于是将进一步包括第一个质量增强层的数据包。类似这样，随着质量等级的升高，越来越多的增强层数据包被累积进来，视频质量逐渐提升；与此同时，码率也越来越高，因为更好的质量显然需要更高的码率。我们测试用的完整码流码率是1587kbps，对应着最高的质量等级。这样用伸缩层来构造质量等级可以不用额外的数据，只需解析码流中本来已经包含的层ID即可，实现起来比较简单。我们实验中所用的可伸缩码流一共可定义9个质量等级。
 
 \begin{table*}[h]
-\centering
-\caption{质量等级定义中组ID与层ID的对应关系}
-\label{tab:sub-stream}
-\begin{tabular}{c|*{8}{p{1.0cm}<{\centering}|}{p{1.0cm}<{\centering}}}
-	\hline\hline
-	  组ID   & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\ \hline
-	质量层ID  & 0 & 0 & 0 & 1 & 1 & 1 & 2 & 2 & 2 \\ \hline
-	时间层ID & 0 & 1 & 2 & 0 & 1 & 2 & 0 & 1 & 2 \\ \hline
-\end{tabular}
+	\centering
+	\vspace{10pt}
+	\vspace{10pt}
+	\caption{质量等级定义中组ID与层ID的对应关系}
+	\label{tab:sub-stream}
+	\begin{tabular}{c|*{8}{p{1.0cm}<{\centering}|}{p{1.0cm}<{\centering}}}
+		\hline\hline
+		组ID   & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\ \hline
+		质量层ID  & 0 & 0 & 0 & 1 & 1 & 1 & 2 & 2 & 2 \\ \hline
+		时间层ID & 0 & 1 & 2 & 0 & 1 & 2 & 0 & 1 & 2 \\ \hline
+	\end{tabular}
+	\vspace{10pt}
 \end{table*}
 
 在我们的实验中用限速软件NetLimiter\footnote{http://www.netlimiter.com/}来模拟实际网络环境中的带宽情况。平均带宽的取值从400kbps到1400kbps，以100kbps的间隔递增。对于每个平均带宽值，通过在平均值基础上加随机干扰来模拟带宽波动。在带宽波动的情况下，流媒体系统在每种质量控制算法下各运行10分钟，并记录所发送的质量等级变化。所有质量等级的平均值作为视频质量的度量，而所有质量等级的方差作为质量平滑性的度量。这两个指标被用于不同算法的比较。比较中的基准算法是达尔文流媒体服务器中内置的包延迟反馈（Packet Delay Feedback，PDF）算法。
@@ -166,32 +190,43 @@ K_d = K_u \cdot T_u/8.
 
 \subsection{结果分析}
 
-\begin{figure*}[t]
+\begin{figure*}[!ht]
 	\centering
+	\vspace{10pt}
 	\subfloat[不同质量控制算法的质量等级均值]{
-		\includegraphics[width=0.8\textwidth]{figures/Quality-all.png}
+		\includegraphics[width=0.9\textwidth]{figures/Quality-all.png}
 		\label{fig:quality-all}} \\
 	\subfloat[不同质量控制算法的质量等级方差]{
-		\includegraphics[width=0.8\textwidth]{figures/Variance-all.png}
+		\includegraphics[width=0.9\textwidth]{figures/Variance-all.png}
 		\label{fig:variance-all}}
 	\caption{长/短期预测算法与达尔文服务器中的包延迟反馈（PDF）算法的比较}
 	\label{fig:performance-all}
+	\vspace{10pt}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!ht]
 	\centering
+	\vspace{10pt}
 	\subfloat[PID和PDF算法的质量等级均值]{
-		\includegraphics[width=0.8\textwidth]{figures/Quality-two.png}
+		\includegraphics[width=0.9\textwidth]{figures/Quality-two.png}
 		\label{fig:quality-two}} \\
 	\subfloat[PID和PDF算法的质量等级方差]{
-		\includegraphics[width=0.8\textwidth]{figures/Variance-two.png}
+		\includegraphics[width=0.9\textwidth]{figures/Variance-two.png}
 		\label{fig:variance-two}}
 	\caption{本文提出的PID控制算法与达尔文服务器中的包延迟反馈（PDF）算法的比较}
 	\label{fig:performance-two}
+	\vspace{10pt}
 \end{figure*}
 
-\begin{table*}[ht]
+为了分析PID控制模型各个部分的效果，我们首先只用比例部分和积分部分来进行了初步的测试实验。由于这两个部分各自对应当前的短期误差和积累的长期误差，我们分别称之为短期预测算法（Short-Term Prediction，STP）和长期预测算法（Long-Term Prediction，LTP）。图\ref{fig:performance-all}展示了这两种控制算法和基准算法的实验结果。可以看出，短期预测算法能取得最高的平均质量等级，但它的质量等级方差也是最高的。这正符合短期预测总是倾向于紧紧跟随带宽变化的特点。长期预测算法恰恰与之相反，保持了一个较低的质量等级方差，但也牺牲了一部分平均质量。虽然它的平均质量不如短期预测算法，但也超出了基准算法。
+
+短期预测和长期预测算法有各自的局限性，完整的PID控制算法则既能降低质量波动又能提升平均质量。实验结果可参见图\ref{fig:performance-two}。可以看到，当与积分和微分相结合后，比例部分在短期预测算法中那样的激进效果已经弱化了。如图\ref{fig:variance-two}所示，PID算法取得了比PDF算法更低的质量波动。
+
+表\ref{tab:improvement}列出了四种控制算法的定量比较数据，从中我们可以看出PID算法相比其他几种算法有明显的优势。与基准算法PDF相比，基于PID的质量控制算法取得了8.6\%的视频质量提升，同时将质量波动也降低了24.8\%。当带宽在平均值800kbps附近波动的时候，四种控制算法对应的视频质量等级变化情况如图\ref{fig:fluctuation}所示。从中我们可以明显观察到PID控制算法得到的视频质量更加平稳。
+
+\begin{table*}[!ht]
 	\centering
+	\vspace{10pt}
 	\caption{不同质量控制算法与包延迟反馈算法的定量比较}
 	\label{tab:improvement}
 	\begin{tabular}[b]{p{4.2cm}<{\centering}|p{4.2cm}<{\centering}|p{4.2cm}<{\centering}}
@@ -202,31 +237,46 @@ K_d = K_u \cdot T_u/8.
 		长期预测 (LTP) & +7.9\% & -17.2\% \\ \hline
 		PID控制 (PID) & +8.6\% & \textbf{-24.8\%} \\ \hline
 	\end{tabular}
+	\vspace{10pt}
 \end{table*}
 
-为了分析PID控制模型各个部分的效果，我们首先只用比例部分和积分部分来进行了初步的测试实验。由于这两个部分各自对应当前的短期误差和积累的长期误差，我们分别称之为短期预测算法（Short-Term Prediction，STP）和长期预测算法（Long-Term Prediction，LTP）。图\ref{fig:performance-all}展示了这两种控制算法和基准算法的实验结果。可以看出，短期预测算法能取得最高的平均质量等级，但它的质量等级方差也是最高的。这正符合短期预测总是倾向于紧紧跟随带宽变化的特点。长期预测算法恰恰与之相反，保持了一个较低的质量等级方差，但也牺牲了一部分平均质量。虽然它的平均质量不如短期预测算法，但也超出了基准算法。
-
-短期预测和长期预测算法有各自的局限性，完整的PID控制算法则既能降低质量波动又能提升平均质量。实验结果可参见图\ref{fig:performance-two}。可以看到，当与积分和微分相结合后，比例部分在短期预测算法中那样的激进效果已经弱化了。如图\ref{fig:variance-two}所示，PID算法取得了比PDF算法更低的质量波动。
-
-表\ref{tab:improvement}列出了四种控制算法的定量比较数据，从中我们可以看出PID算法相比其他几种算法有明显的优势。与基准算法PDF相比，基于PID的质量控制算法取得了8.6\%的视频质量提升，同时将质量波动也降低了24.8\%。当带宽在平均值800kbps附近波动的时候，四种控制算法对应的视频质量等级变化情况如图\ref{fig:fluctuation}所示。从中我们可以明显观察到PID控制算法得到的视频质量更加平稳。
-
-\begin{figure}[t]
+\begin{figure}[!h]
 \centering
-\includegraphics[width = 0.6\linewidth]{figures/Fluctuation.png}
+\vspace{10pt}
+\includegraphics[width = 0.8\linewidth]{figures/Fluctuation.png}
 \caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
 \end{figure}
 
+\subsection{与码流截取相结合的效果}
 
-上面的实验直接用可伸缩视频中内置的伸缩层来构造质量等级，并没有结合本文前一章中提出的码流截取算法。实际的可伸缩视频流媒体系统中，当码率自适应算法给出一个适合传输的码率后，由码流截取方案根据这一码率限制截取出一个子流向客户端发送。本小节展示将本文提出的算法相结合的系统运行效果。
+上面的实验直接用可伸缩视频中内置的伸缩层来构造质量等级，并没有结合本文前一章中提出的码流截取算法。实际的可伸缩视频流媒体系统中，当码率自适应算法给出一个适合传输的码率后，由码流截取方案根据这一码率限制截取出一个子流向客户端发送。本小节展示将本文提出的码流截取算法与码率自适应算法相结合的系统运行效果。
 
-我们的比较对象是采用其内置的质量控制算法和JSVM基本码流截取方案的达尔文流媒体服务器。比较结果如图\ref{fig:fluctuation-psnr}所示。其中展示了带宽在400kbps、600kbps、800kbps
-和1000kbps附近波动时，所发送视频流的PSNR变化情况。可以看到，采用本文算法的系统性能要好于比较对象，体现在：一，成功避免了不必要的质量下降，例如图\ref{fig:Fluctuation-PSNR3}的
-350秒处和图\ref{fig:Fluctuation-PSNR4}的150秒处；二，能够维持一个相对更高的PSNR值，例如图\ref{fig:Fluctuation-PSNR1}的450秒附近和图\ref{fig:Fluctuation-PSNR2}的500秒附近。
+我们的比较对象是采用其内置的包延迟反馈算法和JSVM基本码流截取方案的达尔文流媒体服务器。比较结果如图\ref{fig:fluctuation-psnr}所示。其中展示了带宽在400kbps、600kbps、800kbps
+和1000kbps附近波动时，所发送视频流的PSNR变化情况。可以看到，采用本文算法的系统性能要好于比较对象，体现在以下两个方面：第一，成功避免了不必要的质量下降，例如图\ref{fig:Fluctuation-PSNR3}的350秒处和图\ref{fig:Fluctuation-PSNR4}的150秒处；第二，能够维持一个相对更高的PSNR值，例如图\ref{fig:Fluctuation-PSNR1}的450秒附近和图\ref{fig:Fluctuation-PSNR2}的500秒附近。
 
 整个时间过程中的PSNR均值和方差在表\ref{tab:improvement-combined}中列出，定量地证明了本文算法的优越性。例如，当带宽在800kbps附近波动时，采用本文算法的系统所传送视频的PSNR平均值为38.75dB，比比较对象高了0.83个dB，同时PSNR方差也由1.24降低到了0.69，意味着视频质量平滑性也更好。
 
-\begin{table*}[!h]
+\begin{figure*}[!ht]
 	\centering
+	\subfloat[带宽在400kbps附近波动]{
+		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR1.png}
+		\label{fig:Fluctuation-PSNR1}} \\
+	\subfloat[带宽在600kbps附近波动]{
+		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR2.png}
+		\label{fig:Fluctuation-PSNR2}} \\
+	\subfloat[带宽在800kbps附近波动]{
+		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR3.png}
+		\label{fig:Fluctuation-PSNR3}} \\
+	\subfloat[带宽在1000kbps附近波动]{
+		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR4.png}
+		\label{fig:Fluctuation-PSNR4}}
+	\caption{不同流媒体系统所发送视频的PSNR随时间的变化情况
+		\label{fig:fluctuation-psnr}}
+\end{figure*}
+
+\begin{table*}[!ht]
+	\centering
+	\vspace{10pt}
 	\caption{采用本文算法的系统与原始系统PSNR均值与方差的比较}
 	\label{tab:improvement-combined}
 	\small
@@ -256,26 +306,9 @@ K_d = K_u \cdot T_u/8.
 			& PSNR的方差 & 1.30 & 0.71 & -0.59 \\ \hline
 		\end{tabular}
 	\end{minipage}
+	\vspace{10pt}
 \end{table*}
-
-\begin{figure*}[!ht]
-\centering
-\subfloat[带宽在400kbps附近波动]{
-\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR1.png}
-\label{fig:Fluctuation-PSNR1}} \\
-\subfloat[带宽在600kbps附近波动]{
-\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR2.png}
-\label{fig:Fluctuation-PSNR2}} \\
-\subfloat[带宽在800kbps附近波动]{
-\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR3.png}
-\label{fig:Fluctuation-PSNR3}} \\
-\subfloat[带宽在1000kbps附近波动]{
-\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR4.png}
-\label{fig:Fluctuation-PSNR4}}
-\caption{不同流媒体系统所发送视频的PSNR随时间的变化情况
-\label{fig:fluctuation-psnr}}
-\end{figure*}
 
 \section{本章小结}
 
-本章首先对PID控制器的基本思想做了简单介绍，然后将其用到了视频流媒体中的码率自适应问题中。在选择了合适的过程变量与控制目标之后，对通用PID模型稍作修改，得到了更加直观有效的基于比例的模型，并据此给出了码率自适应算法（又称为质量控制算法）。所提出的算法相比于其他算法不仅提高了所发送视频的平均质量，还降低了质量波动，取得了更好的平滑性。当流媒体服务器把最佳视频码流传送给用户后，在下一章中我们讨论如何对视频流的解码过程进行优化，以确保尽可能多的客户端设备能达到播放高清甚至超高清视频的条件。
+本章首先对PID控制器的基本思想做了简单介绍，然后将其用到了视频流媒体系统的码率自适应问题中。在选择了合适的过程变量与控制目标之后，对通用PID模型稍作修改，得到了更加直观有效的基于比例的模型，并据此给出了码率自适应算法（又称为质量控制算法）。所提出的算法相比于其他算法不仅提高了所发送视频的平均质量，还降低了质量波动，取得了更好的平滑性。本章提出的算法实现在了苹果公司QuickTime流媒体服务器的开源版本（即达尔文流媒体服务器）上，在实际视频点播系统中表现出了良好的性能。
