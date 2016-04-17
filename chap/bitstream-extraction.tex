@@ -180,7 +180,6 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 	\label{eq:error_update}
 	e_{seq} = e_{seq} + e_m \: .
 	\end{equation}
-	\vspace{10pt}
 	\item[4)]重复2)到3)的步骤，直到所有的增强层数据包全部被移除，且每个包都根据它被移除的次序被赋予了优先级值。
 	\vspace{10pt}
 \end{description}
@@ -188,7 +187,6 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 上面描述的过程用算法伪码表示可参见Algorithm\ref{algo:greedy}。
 
 \begin{algorithm}
-	\vspace{10pt}
 	\caption{优先级赋值的贪心算法}
 	\label{algo:greedy}
 	\begin{algorithmic}
@@ -202,7 +200,6 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 		\STATE 将$e_{seq}$更新为$e_{seq} + e_m$，并将$q$更新为$q+1$；
 		\ENDWHILE
 	\end{algorithmic}
-	\vspace{10pt}
 \end{algorithm}
 
 从伪码很容易看出优先级赋值算法的时间复杂度为$O(K^2)$。需要指出的是，在优先级赋值过程中的这些计算量相比于误差向量获取过程中解码的计算量来说是微不足道的。通过增加优化窗口大小$K$，可以每次比较更多的数据包来确定优先级，因此有望得到更优的截取结果。然而，这样做不仅增加计算量，更重要的是会使存储误差向量所需的内存有显著的增加。此外，如果优先级值采用NALU头信息中的字段存储的话，因为该字段只有6个比特，所支持的范围是0～63，这也限制了$K$的大小。
@@ -230,7 +227,6 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{figure}[!ht]
 	\centering
-	\vspace{10pt}
 	\includegraphics[width = 1.0\linewidth]{eps/extraction-flow}
 	\caption{使用优先级值进行实际码流截取的程序流程图\label{fig:extraction-flow}}
 \end{figure}
@@ -284,7 +280,6 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 \begin{table*}[t]
 	\centering
-	\vspace{10pt}
 	\caption{本文提出的截取方案相比于JSVM的PSNR提升}
 	\label{tab:extraction-gain}
 	\small
@@ -347,7 +342,9 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 对于无参考源的应用场景，我们也做了相应的实验。图\ref{fig:extraction-performance}展示了全部八个测试序列在无参考截取实验中的性能比较结果，直观地表明了本文所提方案取得了较好的率失真性能。表\ref{tab:extraction-gain}列出了对应的PSNR提升数据，同样可以看出本文所提出的方案的优越性。
 
-\begin{table*}[t]
+为了进一步证明本文提出的码流截取方案在无参考情况下的有效性，我们除了与JSVM对比，还做了进一步的对比实验。比较对象一方面选了Maani等人的方法\supercite{Maani2009}，另一方面选了不进行本文\ref{subsec:noref}小节中的修改而直接采用公式(\ref{eq:R-D_impact_i})的方法。表\ref{tab:methods-compare}列出了三种不同的无参考截取方法相对于JSVM QL的平均PSNR提升。可以看出，Maani等人的方法在无参考情况下跟本文的方法性能相差无几，而在进行本文\ref{subsec:noref}小节中的修改之前，直接采用公式(\ref{eq:R-D_impact_i})则性能差了许多，甚至在有些序列上取得了比JSVM QL还差的结果。这进一步说明了\ref{subsec:noref}小节中修改的重要性。
+
+\begin{table*}[!ht]
 	\centering
 	\vspace{10pt}
 	\caption{无参考源时本文提出的截取方案相比于JSVM的PSNR提升}
@@ -373,8 +370,6 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 		\end{tabular}
 	\end{minipage}
 \end{table*}
-
-为了进一步证明本文提出的码流截取方案在无参考情况下的有效性，我们除了与JSVM对比，还做了进一步的对比实验。比较对象一方面选了Maani等人的方法\supercite{Maani2009}，另一方面选了不进行本文\ref{subsec:noref}小节中的修改而直接采用公式(\ref{eq:R-D_impact_i})的方法。表\ref{tab:methods-compare}列出了三种不同的无参考截取方法相对于JSVM QL的平均PSNR提升。可以看出，Maani等人的方法在无参考情况下跟本文的方法性能相差无几，而在进行本文\ref{subsec:noref}小节中的修改之前，直接采用公式(\ref{eq:R-D_impact_i})则性能差了许多，甚至在有些序列上取得了比JSVM QL还差的结果。这进一步说明了\ref{subsec:noref}小节中修改的重要性。
 
 \begin{table*}[t]
 	\centering
