@@ -4,7 +4,7 @@
 
 \section{视频的压缩编码}
 
-原始视频信号数据量过于庞大，必须经过压缩才能有效进行存储和传输。视频信号之所以能被压缩是因为其中存在大量冗余信息，包括空间冗余、时间冗余、统计冗余等\supercite{Gao-book-2010}。以仙农信息论\supercite{Shannon-1948}和率失真理论\supercite{Berger-book-1984}为基础，通过预测（如时间预测和空间预测）\footnote{在空域或时域寻找相似信号，用与相似信号的残差来重建当前信号的一种压缩手段。}、变换（如离散余弦变换\supercite{Rao-1990}、哈达玛变换\supercite{Pratt-1969}）、量化\supercite{Gray-TIT1997}、熵编码（如变长编码\supercite{Huffman-1952} 、算术编码\supercite{Rissanen-1979}）等技术手段，可以去除这些冗余，以一定的失真为代价获得很高的数据压缩比。数字视频压缩编码技术经过了半个多世纪的发展，形成了一系列的国际标准。这些标准是包括视频流媒体在内的所有视频应用的基础。
+原始视频信号数据量过于庞大，必须经过压缩才能有效进行存储和传输。视频信号之所以能被压缩是因为其中存在大量冗余信息，包括空间冗余、时间冗余、统计冗余等\supercite{Gao-book-2010}。以仙农信息论\supercite{Shannon-1948}和率失真理论\supercite{Berger-book-1984}为基础，通过预测（在空域或时域寻找相似信号，用与相似信号的残差来重建当前信号的一种压缩手段，如时间预测和空间预测）、变换（如离散余弦变换\supercite{Rao-1990}、哈达玛变换\supercite{Pratt-1969}）、量化\supercite{Gray-TIT1997}、熵编码（如变长编码\supercite{Huffman-1952} 、算术编码\supercite{Rissanen-1979}）等技术手段，可以去除这些冗余，以一定的失真为代价获得很高的数据压缩比。数字视频压缩编码技术经过了半个多世纪的发展，形成了一系列的国际标准。这些标准是包括视频流媒体在内的所有视频应用的基础。
 
 最早的视频编码标准通常被认为是由国际电信联盟于1990年制定的H.261\supercite{H.261}。同一时期，由国际标准化组织和国际电工委联合成立的运动图像专家组（Moving Pictures Expert Group，MPEG）也开始了视频相关标准的制定工作，并于1992年推出了MPEG-1\supercite{MPEG1}。此后，以MPEG-2\supercite{MPEG2}、H.263\supercite{H.263}为代表的标准不断演进，大大推动了数字视频产业的发展。时至今日，国际电信联盟与国际标准化组织已经在标准制定方面互相合作，二者共同打造的H.264/AVC视频编码标准在蓝光光碟、高清数字视频光盘（Digital Video Disk，DVD）、数字电视广播、互联网视频共享和在线观看等各个领域都占据了主流地位，普及度极高。H.264/AVC的后继者、新一代视频编码标准HEVC（High Efficiency Video Coding）\supercite{HEVCOverview}也已经于2013年发布，但因为其编解码复杂度高\supercite{Bossen-TCSVT2012}且大多设备和系统尚未支持，所以还处于推广阶段\supercite{JCTVC-H0693, Chavarrias-TCE2013, Duan2014}。我国也发布了自主知识产权的视频编码标准AVS (Audio Video coding Standard) \supercite{AVS}，并进入了第二代AVS标准的制定阶段。考虑到应用的广泛程度，本文的研究大部分都是基于H.264/AVC及其可伸缩扩展的。但需要指出的是，随着视频编码技术的逐步成熟和定型，各种编码标准大同小异，因此本文的方法和结果可以很容易适配到其它标准上去。
 
@@ -96,15 +96,13 @@ NALU的取舍。这就需要对H.264/AVC的NAL层进行扩展从而能够在码�
 的取值留作以后扩展使用；SVC就增加了一些扩展的NAL类型。例如，nal\_type=20的
 NALU为新增的VCL单元，包含的是SVC中增强层的编码数据；nal\_type=14的NALU为新增的SVC前缀单元，它可能是VCL单元也可能是非VCL单元，取决于紧接着它到来的下一个NALU。nal\_type=15的NALU用来传送SVC特有的图像参数集。对于这些新增类型的具体分析可以参见相关文档\supercite{SVC-Interface}。
 
-普通H264/AVC解码器遇到nal\_type大于12的单元会忽略之，但能成功解码基本层，因此SVC可与之兼容。而支持SVC的解码器将对类型为14、20的NALU进行利用，实现可伸缩性。与普通H.264/AVC的NALU不同，类型为14、20的NALU并非只有1个头字节，而是扩展为4字节的头。如图\ref{fig:05}\supercite{SVC-Interface}所示。
+普通H264/AVC解码器遇到nal\_type大于12的单元会忽略之，但能成功解码基本层，因此SVC可与之兼容。而支持SVC的解码器将对类型为14、20的NALU进行利用，实现可伸缩性。与普通H.264/AVC的NALU不同，类型为14、20的NALU并非只有1个头字节，而是扩展为4字节的头。如图\ref{fig:05}\supercite{SVC-Interface}所示。可以看出，其中除了与普通NALU一致的第一字节，还包含了空间、时间和质量层的标志（DID、TID、QID）以及其他一些用于提供可伸缩性的信息。
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width = 1.0\linewidth]{clip/05.png}
 	\caption{SVC中的NALU头结构\label{fig:05}}
 \end{figure}
-
-可以看出，其中除了与普通NALU一致的第一字节，还包含了空间、时间和质量层的标志（DID、TID、QID）以及其他一些用于提供可伸缩性的信息。
 
 综上，SVC是在H.264/AVC标准的基础上扩展得到的。SVC标准由国际电信联盟与国际标准化组织的专家组成的联合视频小组制定，该组织在标准形成过程中还开发了一个官方的参考软件，称为JSVM（Joint Scalable Video Model）\supercite{JSVM}。该软件完整实现了SVC的编解码过程。虽然该软件未做任何优化，很难在实际中应用，但由于其囊括了SVC标准中的几乎所有特性且清晰逻辑、配置简单，比较适合学习参考，以及作为学术研究的实验平台。因此，几乎所有的学术工作都是基于JSVM参考软件，在其上实现自己的算法并与内置的算法进行对比，体现其效率的提升。本文的研究中也采用了JSVM作为比较对象。
 
