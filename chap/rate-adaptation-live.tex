@@ -30,7 +30,7 @@
 	\centering
 	\vspace{10pt}
 	\vspace{10pt}
-	\includegraphics[width = 1.0\linewidth]{clip/08.png}
+	\includegraphics[width = 0.9\linewidth]{clip/08.png}
 	\vspace{10pt}
 	\caption{简化的直播系统传输架构\label{fig:08}}
 	\vspace{10pt}
@@ -100,19 +100,20 @@ S_{ASB}(t)+S_{TSB}(t)+S_{TRB}(t)+S_{PB}(t)=G(t)-P(t).
 G(t)-P(t)=\phi,
 \end{equation}
 其中$\phi$是一个常量，反映了播放延迟。将公式(\ref{eq:mm-3})、(\ref{eq:mm-6})代入公式(\ref{eq:mm-5})，我们可以得到：
-
+\vspace{10pt}
 \begin{equation}
+\vspace{10pt}
 \label{eq:mm-7}
 S_{ASB}(t)+S_{PB}(t)=\phi-S_{TSB}(t).
 \end{equation}
 
-当$S_{ASB}(t)=0$，由公式(\ref{eq:mm-1})和(\ref{eq:mm-2})可知，$S_{TSB}(t)$的长度由$A(t)$决定（因为$G(t)$以匀速增长），它反映了网络状况。当$S_{ASB}(t)>0$时，意味着在发送数据到TSB时发生了阻塞，TSB一直处于充满状态，$S_{TSB}(t)$达到了上限，我们表示为$\alpha$。在这种情况下，公式(\ref{eq:mm-7})成为：
-
+当$S_{ASB}(t)=0$时，由公式(\ref{eq:mm-1})和(\ref{eq:mm-2})可知，$S_{TSB}(t)$的长度由$A(t)$决定（因为$G(t)$以匀速增长），它反映了网络状况。当$S_{ASB}(t)>0$时，意味着在发送数据到TSB时发生了阻塞，TSB一直处于充满状态，$S_{TSB}(t)$达到了上限，我们表示为$\alpha$。在这种情况下，公式(\ref{eq:mm-7})成为：
+\vspace{10pt}
 \begin{equation}
+\vspace{10pt}
 \label{eq:mm-8}
 S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 \end{equation}
-
 这意味着可以通过ASB的变化来控制和估计PB的变化。当$0 < S_{PB}(t) \le S_0$的时候，播放是连续的；这可以通过保持$\delta - S_0 \le S_{ASB}(t) < \delta$来实现，其中$\delta \ge S_0$。为了实现最小的延迟，$\delta$期望被设置为$S_0$。
 
 \begin{figure}[t]
@@ -145,23 +146,25 @@ $S_{ASB}(t)$作为应用层的信息很容易获取，我们下面基于它在�
 与此同时，我们系统网络带宽被充分利用，这可以通过使TSB充满来实现。如上面所讨论过的，当$S_{ASB}(t)>0$时，TSB为充满状态，$S_{TSB}(t)$达到了上限。
 
 综合以上两点，$S_{ASB}(t)$的理想状态应为：
+\vspace{10pt}
 \begin{equation}
 \vspace{10pt}
 \varepsilon \le S_{ASB}(t) \le \varepsilon+\theta,
 \end{equation}
 其中$\varepsilon$以及$\theta$是很小的常量，并且$\varepsilon+\theta<S_0$。
 
-根据上述分析，我们定义系统变量为$S_{ASB}(t)$，它代表在时间$t$时ASB的大小，而目标值为$\varepsilon$。程序将周期性地自动检查ASB，获取当前的过程变量值，并采用基于PID的自适应算法来调整视频码率。
+根据上述分析，我们定义系统的过程变量为$S_{ASB}(t)$，它代表在时间$t$时ASB的大小，其目标值为$\varepsilon$。程序将周期性地自动检查ASB，获取当前的过程变量值，并采用基于PID的自适应算法来调整视频码率。
 
 然而，如果网络吞吐量在一个小的范围频繁波动，将使得该过程变量值不稳定而且相对随机，导致不必要的频繁调整。为了消除这样的随机性，我们将过程变量的定义修改为$\overline{S_{ASB}(t)}$，它表示在时刻$t$之前的一个检查间隔时间段$\tau$内$S_{ASB}(t)$的平均值。它可以表示为：
-
+\vspace{10pt}
 \begin{equation}
+\vspace{10pt}
 \label{eq:asb}
 \overline{S_{ASB}(t)} = \dfrac{1}{\tau} \int_0^\tau {S_{ASB}(t)}\: .
 \end{equation}
 
+另一方面，为了减小不稳定性，我们对通用PID模型中的误差也进行量化，将其表示为：
 \vspace{10pt}
-在另一方面，为了减小不稳定性，我们对通用PID模型中的误差也进行量化，将其表示为：
 \begin{equation}
 \vspace{10pt}
 e(t) = step \times \left \lfloor\dfrac{\varepsilon - \overline{S_{ASB}(t)}}{step} \right \rfloor,
@@ -211,11 +214,22 @@ e(t) = step \times \left \lfloor\dfrac{\varepsilon - \overline{S_{ASB}(t)}}{step
 
 \begin{figure}[!t]
 	\centering
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:09-1}\includegraphics[width=0.8\textwidth]{clip/09-1m.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:09-2}\includegraphics[width=0.8\textwidth]{clip/09-2m.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:09-3}\includegraphics[width=0.8\textwidth]{clip/09-3m.png}}
+	\vspace{10pt}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:09-1}\includegraphics[width=0.9\textwidth]{clip/09-1m.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:09-2}\includegraphics[width=0.9\textwidth]{clip/09-2m.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:09-3}\includegraphics[width=0.9\textwidth]{clip/09-3m.png}}
 	\caption{直播系统在不同测试条件下码率随时间变化的情况}
 	\label{fig:09}
+\end{figure}
+
+\begin{figure}[!t]
+	\centering
+	\vspace{10pt}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.9\textwidth]{clip/14-1m.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.9\textwidth]{clip/14-2m.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.9\textwidth]{clip/14-3m.png}}
+	\caption{直播系统在不同测试条件下播放时间占比的变化情况}
+	\label{fig:14}
 \end{figure}
 
 在我们的实验中，我们通过动态改变内容产生方所连接的路由器所允许的最大带宽来模拟出波动的网络状况。视频的采集帧率设置为15 FPS；ASB的最大长度为150，PB最大长度$S_0$为60，过程变量$\overline{S_{ASB}(t)}$的控制目标值$\varepsilon$为15，误差量化步长$step$为5（这些值的单位是数据段的个数，每个数据段为一个视频帧）；改变码率的单位为20kbps，初始码率为500kbps；对过程变量的检查间隔为2秒。我们调节得到的PID控制参数$K_p$、$K_i$和$K_d$分别为0.8，0.13以及0.07。
@@ -225,18 +239,9 @@ e(t) = step \times \left \lfloor\dfrac{\varepsilon - \overline{S_{ASB}(t)}}{step
 
 \subsection{结果分析}
 
-测试结果参见图\ref{fig:09}、\ref{fig:14}和表\ref{tab:live-bandwidth}、\ref{tab:live-playtime}。
+测试结果参见图\ref{fig:09}、\ref{fig:14}和表\ref{tab:live-bandwidth}、\ref{tab:live-playtime}。由于移动设备上的UGC视频直播应用刚兴起不久，我们暂未发现有针对这一传输模式的研究工作可供对比。因此，在实验中我们只与不进行码率调整的系统进行了比较。
 
-\begin{figure}[!t]
-	\centering
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.8\textwidth]{clip/14-1m.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.8\textwidth]{clip/14-2m.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.8\textwidth]{clip/14-3m.png}}
-	\caption{直播系统在不同测试条件下播放时间占比的变化情况}
-	\label{fig:14}
-\end{figure}
-
-从图\ref{fig:09-1}中可以看出，我们提出的自适应方法使得码率在35秒以内保持上升，直到趋近带宽。从图\ref{fig:09-2}和\ref{fig:09-3}可以看出，通过PID自适应算法的调整，在一个合理的延迟之内，码率和波动的带宽基本保持同步，而且系统对带宽的频繁变化进行了一定的平滑。如表\ref{tab:live-bandwidth}所示，我们提出的算法对于条件（1）、（2）和（3）分别将带宽占用率提高到92.1\%、88.9\%以及87.1\%。
+从图\ref{fig:09-1}中可以看出，我们提出的自适应方法使得码率在35秒以内保持上升，直到趋近带宽。从图\ref{fig:09-2}和\ref{fig:09-3}可以看出，通过PID自适应算法的调整，在一个合理的延迟之内，码率和波动的带宽基本保持同步，而且系统对带宽的频繁变化进行了一定的平滑。如表\ref{tab:live-bandwidth}所示，码率不进行调整时带宽占用率较低，而我们提出的算法对于条件（1）、（2）和（3）分别将带宽占用率提高到92.1\%、88.9\%以及87.1\%。
 
 从图\ref{fig:14-1}可以看出，在带宽固定的情况下，对于进行自适应码率调整和未进行码率调整的视频流，播放基本都是连续的。但从图\ref{fig:14-2}和\ref{fig:14-3}可以看出，未进行码率调整的视频流的播放过程被频繁地中断，而进行码率调整的视频流的播放过程在大部分时间是连续的。如表\ref{tab:live-playtime}所示，我们所提出的方法对于条件（2）和（3）分别将播放时间占比提高到97.3\%和96.1\%，因此显著提高了播放连续性。
 
@@ -244,6 +249,7 @@ e(t) = step \times \left \lfloor\dfrac{\varepsilon - \overline{S_{ASB}(t)}}{step
 
 \begin{table*}
 	\centering
+	\vspace{10pt}
 	\caption{直播系统实验中的带宽利用率}
 	\label{tab:live-bandwidth}
 	\begin{tabular}{c|*{2}{p{1.0cm}<{\centering}|}{p{1.0cm}<{\centering}}}

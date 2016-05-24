@@ -17,7 +17,8 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 \begin{figure}[h]
 	\centering
 	\vspace{10pt}
-	\includegraphics[width = 0.6\linewidth]{clip/18.png}
+	\vspace{10pt}
+	\includegraphics[width = 0.7\linewidth]{clip/18.png}
 	\vspace{10pt}
 	\caption{PID控制器原理示意图\label{fig:18}}
 \end{figure}
@@ -169,7 +170,7 @@ K_d = K_u \cdot T_u/8.
 
 为了简单起见，我们先用可伸缩视频内置的伸缩层级组合成质量等级来用于质量控制。该定义的基本思想是将可伸缩视频码流中的数据包分成若干组。分组的依据是这个数据包所属的伸缩层，也就是储存在NALU头信息中的层ID字段。表\ref{tab:sub-stream}展示了组ID与层ID的对应关系。我们所用的测试码流含有3个质量层和3个时间层，因此其中的数据包被分为9个组。质量等级被定义为组ID不大于等级值的所有组的合集。例如，质量等级2含有组0到组2内的所有数据包，因此将包含所有的时间层，但只有质量基本层；质量等级5含有组0到组5，于是将进一步包括第一个质量增强层的数据包。类似这样，随着质量等级的升高，越来越多的增强层数据包被累积进来，视频质量逐渐提升；与此同时，码率也越来越高，因为更好的质量显然需要更高的码率。我们测试用的完整码流码率是1587kbps，对应着最高的质量等级。这样用伸缩层来构造质量等级可以不用额外的数据，只需解析码流中本来已经包含的层ID即可，实现起来比较简单。我们实验中所用的可伸缩码流一共可定义9个质量等级。
 
-\begin{table*}[h]
+\begin{table*}[t]
 	\centering
 	\vspace{10pt}
 	\vspace{10pt}
@@ -224,7 +225,14 @@ K_d = K_u \cdot T_u/8.
 
 表\ref{tab:improvement}列出了四种控制算法的定量比较数据，从中我们可以看出PID算法相比其他几种算法有明显的优势。与基准算法PDF相比，基于PID的质量控制算法取得了8.6\%的视频质量提升，同时将质量波动也降低了24.8\%。当带宽在平均值800kbps附近波动的时候，四种控制算法对应的视频质量等级变化情况如图\ref{fig:fluctuation}所示。从中我们可以明显观察到PID控制算法得到的视频质量更加平稳。
 
-\begin{table*}[!ht]
+\begin{figure}[!h]
+	\centering
+	\vspace{10pt}
+	\includegraphics[width = 0.8\linewidth]{figures/Fluctuation.png}
+	\caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
+\end{figure}
+
+\begin{table*}[!h]
 	\centering
 	\vspace{10pt}
 	\caption{不同质量控制算法与包延迟反馈算法的定量比较}
@@ -239,13 +247,6 @@ K_d = K_u \cdot T_u/8.
 	\end{tabular}
 	\vspace{10pt}
 \end{table*}
-
-\begin{figure}[!h]
-\centering
-\vspace{10pt}
-\includegraphics[width = 0.8\linewidth]{figures/Fluctuation.png}
-\caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
-\end{figure}
 
 \subsection{与码流截取相结合的效果}
 
