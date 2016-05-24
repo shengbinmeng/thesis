@@ -221,7 +221,8 @@ RTP为包括H.264在内的不同标准流媒体数据提供了有效的传输支
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width = 1.0\linewidth]{clip/06.png}
+	\vspace{10pt}
+	\includegraphics[width = 1.0\linewidth]{eps/JSVM-basic}
 	\caption{JSVM基本截取器的算法图示\label{fig:06}}
 \end{figure}
 
@@ -238,9 +239,10 @@ Amonou等人\supercite{Amonou2007}提出了一个基于“Quality Layers”的�
 在计算QL值的时候，对数据包失真影响的估计是一个计算量非常大的过程，而且估计的准确性也有提高的空间。因此，后续的研究工作大多旨在探索新的失真模型，以求快速、准确地估计丢弃数据包所带来的失真。
 新提出的失真模型中一方面是降低复杂度，另一方面是进一步提高准确度。例如，Sun等人\supercite{Sun2009}和Maani等人\supercite{Maani2009}所构造的模型都是基于帧间的误差漂移来计算失真。Sun等人的模型在性能方面几乎与JSVM相当，但计算复杂度却大大减少。而Maani等人的模型取得了比JSVM更高的估计准确度（由图\ref{fig:16}\supercite{Maani2009}可见，其估计的失真与实际失真基本相同），但是由于其是基于训练的，为了得到更鲁棒的模型参数，需要更大的计算量。
 
-\begin{figure}[h]
+\begin{figure}[t]
 	\centering
-	\includegraphics[width = 0.9\linewidth]{clip/16.png}
+	\vspace{10pt}
+	\includegraphics[width = 0.8\linewidth]{clip/16.png}
 	\caption{基于训练的模型所取得的失真估计准确度图示\label{fig:16}}
 \end{figure}
 
