@@ -59,7 +59,8 @@ TCP是一种网络传输层协议，属于互联网协议栈中的重要组成�
 \begin{figure}[t]
 	\centering
 	\vspace{10pt}
-	\includegraphics[width = 1.0\linewidth]{clip/20.png}
+	\vspace{10pt}
+	\includegraphics[width = 0.9\linewidth]{clip/20.png}
 	\vspace{10pt}
 	\caption{直播系统接收端数据关系\label{fig:20}}
 	\vspace{10pt}
@@ -93,6 +94,7 @@ S_{PB}(t) =A(t)-P(t),
 \label{eq:mm-5}
 S_{ASB}(t)+S_{TSB}(t)+S_{TRB}(t)+S_{PB}(t)=G(t)-P(t).
 \end{equation}
+\vspace{10pt}
 
 公式\ref{eq:mm-3}表示TRB的大小为0，这是因为在RTMP协议实现中TRB内一旦累积到一个完整的数据段，该数据段都会迅速被应用层获取。当接收端连续正常播放视频的时候，存在
 \begin{equation}
@@ -118,8 +120,10 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width = 1.0\linewidth]{clip/21.png}
+	\includegraphics[width = 0.9\linewidth]{clip/21.png}
 	\caption{多缓冲区模型结构图\label{fig:21}}
+	\vspace{10pt}
+	\vspace{10pt}
 \end{figure}
 
 $S_{ASB}(t)$作为应用层的信息很容易获取，我们下面基于它在内容产生方设计一个码率自适应算法来实现高效的上传过程。

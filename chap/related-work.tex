@@ -122,10 +122,10 @@ NALU为新增的VCL单元，包含的是SVC中增强层的编码数据；nal\_ty
 
 在图\ref{fig:10}所示的系统中，通过流式传输播放在线视频的一般过程如下：
 \begin{enumerate}
-\item 用户根据观看意愿检索和选择视频；在Web浏览器与Web服务器之间通过HTTP/TCP进行通信。
+\item 用户根据观看意愿检索和选择视频；这个过程是在Web浏览器与Web服务器之间通过HTTP/TCP进行通信。
 \item Web浏览器利用从服务器得到的参数对客户端的流媒体播放进行初始化；这些参数包括流媒体服务器地址、目录和媒体文件信息等。
-\item 播放器与流服务器之间运行实时流协议（Real-Time Streaming Protocol，RTSP）\supercite{RTSP}，进行音视频数据传输的控制，如准备、开始、暂停、后退等。
-\item 流服务器使用实时传输协议（Real-time Transport Protocol，RTP）\supercite{RTP}将媒体数据传送给客户端，数据抵达时即可解码播放。
+\item 播放器与流服务器之间用实时流协议（Real-Time Streaming Protocol，RTSP）\supercite{RTSP}进行音视频数据传输的控制，如准备、开始、暂停、后退等。
+\item 流服务器通过实时传输协议（Real-time Transport Protocol，RTP）\supercite{RTP}将媒体数据传送给客户端，数据抵达时即可解码播放。
 \end{enumerate}
 
 需要指出的是，上面描述的系统只是一个代表性示例，随着技术的发展，其中很多特定的技术会发生变化。例如，用户检索和选择视频所用的可能不是Web浏览器，而是手机应用；传输数据可能用的是其他协议等，而且不限于客户端和服务器两点通信。但是，基本框架仍然没有太大的变化。
