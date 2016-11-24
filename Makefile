@@ -35,7 +35,7 @@ doc:
 
 clean:
 	$(RM) $(JOBNAME).{aux,bbl,bcf,blg,dvi,lof,log,lot,run.xml,toc,out{,.bak}} \
-		{missfont,texput}.log chap/*.aux
+		{missfont,texput}.log chap/*.aux eps/*.pdf
 
 distclean: clean
 	$(RM) $(JOBNAME).pdf
