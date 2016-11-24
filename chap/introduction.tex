@@ -48,23 +48,23 @@
 	\caption{DASH系统的工作原理示意图\label{fig:DASH}}
 \end{figure}
 
-多码流方案的优点是无需对已有的程序和系统做较大的改动，因此比较易于部署\supercite{Bouten2014}。很多商业视频网站（如YouTube、优酷等）已经用它实现了自适应功能。但是，多码流方案能提供的适应范围和粒度非常有限。例如，YouTube网站上的视频最多只提供144p、240p、360p、480p、720p和1080p这六个等级（参见图\ref{fig:13-1}，其中右下角矩形框中显示了支持的等级），而优酷网上的视频大多只提供标清、高清、超清这三个画质（参见图\ref{fig:13}）。此外，多个码流的编码和存储需要大量的计算资源和磁盘空间，使得时间和空间开销成倍增加。要想以合理的代价提供精细无缝的自适应性，就需要采用可伸缩视频编码的方案。可伸缩视频码流能够以非常小的数据粒度进行码率调整，而且性能分析表明可伸缩视频编码的压缩效率远高于同一内容多次编码的多码流方法\supercite{SVC-Performance}。正是因为这些优势，基于可伸缩视频编码来实现自适应视频流媒体从技术上来说是一个更好的方案，也吸引了学术界很多研究者的关注\supercite{Chuah2012, Zhu2013, Dan2013, Yang2014, Cicalo2014}。
+多码流方案的优点是无需对已有的程序和系统做较大的改动，因此比较易于部署\supercite{Bouten2014}。很多商业视频网站（如YouTube、优酷等）已经用它实现了自适应功能。但是，多码流方案能提供的适应范围和粒度非常有限。例如，YouTube网站上的视频最多只提供144p、240p、360p、480p、720p和1080p这六个等级（参见图\ref{fig:youtube}，其中右下角矩形框中显示了支持的等级），而优酷网上的视频大多只提供标清、高清、超清这三个画质（参见图\ref{fig:youku}）。此外，多个码流的编码和存储需要大量的计算资源和磁盘空间，使得时间和空间开销成倍增加。要想以合理的代价提供精细无缝的自适应性，就需要采用可伸缩视频编码的方案。可伸缩视频码流能够以非常小的数据粒度进行码率调整，而且性能分析表明可伸缩视频编码的压缩效率远高于同一内容多次编码的多码流方法\supercite{SVC-Performance}。正是因为这些优势，基于可伸缩视频编码来实现自适应视频流媒体从技术上来说是一个更好的方案，也吸引了学术界很多研究者的关注\supercite{Chuah2012, Zhu2013, Dan2013, Yang2014, Cicalo2014}。
 
 \begin{figure}[t]
 	\centering
 	\vspace{10pt}
-	\includegraphics[width = 1.0\linewidth]{clip/13-1.png}
+	\includegraphics[width = 1.0\linewidth]{figures/youtube.png}
 	\vspace{10pt}
-	\caption{YouTube视频码率自适应功能图示\label{fig:13-1}}
+	\caption{YouTube视频码率自适应功能图示\label{fig:youtube}}
 	\vspace{10pt}
 \end{figure}
 
 \begin{figure}[t]
 	\centering
 	\vspace{10pt}
-	\includegraphics[width = 1.0\linewidth]{clip/13.png}
+	\includegraphics[width = 1.0\linewidth]{figures/youku.png}
 	\vspace{10pt}
-	\caption{优酷网视频码率自适应功能图示\label{fig:13}}
+	\caption{优酷网视频码率自适应功能图示\label{fig:youku}}
 	\vspace{10pt}
 \end{figure}
 

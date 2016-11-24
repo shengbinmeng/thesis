@@ -6,15 +6,15 @@
 
 在有些视频直播系统中，视频内容由服务器或者与服务器通过局域网紧密连接的设备生成。在这种情形下，视频直播和视频点播系统有很大的相似性。这时视频数据的传输主要是从服务器到观看者客户端。直播服务器将动态生成的视频数据发送给客户端，和点播最主要的区别在于传输速率不能超过视频数据生成的速率，因为当所有生成的数据都传输之后，客户端需要等待下一个数据片段就绪\supercite{Thang2014}。
 
-但在UGC直播模式下，服务器本身不充当初始的内容产生方， 而是在其他设备上持续生成的视频内容经过互联网（具有不确定的带宽和不可忽略的延迟）传输到中转服务器，然后再由服务器分发给观看者。目前这种模式的直播越来越流行，因为已经非常普及的智能手机成为了理想的内容产生方和观看接收方。图\ref{fig:07}展示了通用的手机视频直播系统的主要模块。集成了高效视频编码器的智能手机作为内容提供者，将实时视频数据传输到服务器。服务器所在的本地网络内设有转码器和提供播放服务的内容服务器。转码服务器会将上传的码流实时转码成多路具有不同码率的视频流，交由内容服务器供不同的观看者播放。播放客户端可以根据自己的网络环境选择最合适的码率，从服务器获取视频数据。
+但在UGC直播模式下，服务器本身不充当初始的内容产生方， 而是在其他设备上持续生成的视频内容经过互联网（具有不确定的带宽和不可忽略的延迟）传输到中转服务器，然后再由服务器分发给观看者。目前这种模式的直播越来越流行，因为已经非常普及的智能手机成为了理想的内容产生方和观看接收方。图\ref{fig:live-streaming}展示了通用的手机视频直播系统的主要模块。集成了高效视频编码器的智能手机作为内容提供者，将实时视频数据传输到服务器。服务器所在的本地网络内设有转码器和提供播放服务的内容服务器。转码服务器会将上传的码流实时转码成多路具有不同码率的视频流，交由内容服务器供不同的观看者播放。播放客户端可以根据自己的网络环境选择最合适的码率，从服务器获取视频数据。
 
 \begin{figure}[t]
 	\vspace{10pt}
 	\vspace{10pt}
 	\centering
-	\includegraphics[width = 1.0\linewidth]{clip/07.png}
+	\includegraphics[width = 1.0\linewidth]{figures/live-streaming.png}
 	\vspace{10pt}
-	\caption{通用的手机直播系统模型\label{fig:07}}
+	\caption{通用的手机直播系统模型\label{fig:live-streaming}}
 	\vspace{10pt}
 \end{figure}
 
@@ -22,7 +22,7 @@
 
 为了提供高质量的直播视频流，内容产生方理论上应该上传尽可能高码率的视频。然而高码率可能导致数据传输时间过长，造成接收端的播放中断。因此，在带宽变化的情况下，而内容产生方一方面需要尽可能利用网络吞吐量传输高质量的视频，另一方面还要保证接收端的流畅播放。与此同时，由于UGC直播应用大多具备交互功能，所以延迟需要控制在一个可以接受的范围。这就是我们在内容产生方设计的上传码率自适应模块所要达到的目标。
 
-为简单起见，我们假设服务器具有快速的内部操作，同时接收端通过稳定高效地网络与服务器进行连接，这意味着服务器和接收端的视频流与内容产生方和服务器的视频流保持同步。这个假设对我们的研究重点没有影响。于是我们将传输架构简化成如图\ref{fig:08}所示。内容产生方的编码器将输入视频压缩之后传递给基于TCP的应用层协议。经过各层协议的封装，数据被传递到网络进行实际传输。在接收端经过一个逆向过程之后，数据输入到解码器进行解码，然后在播放器中进行渲染。与此同时，在发送方的自适应控制模块每隔特定的周期对传输信息进行检查，并采用码率自适应算法所给出的结果对编码器参数进行调整。
+为简单起见，我们假设服务器具有快速的内部操作，同时接收端通过稳定高效地网络与服务器进行连接，这意味着服务器和接收端的视频流与内容产生方和服务器的视频流保持同步。这个假设对我们的研究重点没有影响。于是我们将传输架构简化成如图\ref{fig:live-streaming-transmission}所示。内容产生方的编码器将输入视频压缩之后传递给基于TCP的应用层协议。经过各层协议的封装，数据被传递到网络进行实际传输。在接收端经过一个逆向过程之后，数据输入到解码器进行解码，然后在播放器中进行渲染。与此同时，在发送方的自适应控制模块每隔特定的周期对传输信息进行检查，并采用码率自适应算法所给出的结果对编码器参数进行调整。
 
 现在几乎所有的UGC直播应用采用的都是RTMP协议，而RTMP协议是基于TCP的，所以在我们的研究中，主要考虑的是传输层协议为TCP的情况。接下来首先详细分析直播中的传输过程，建立一个多缓冲区模型。然后根据缓冲区模型提供的系统状态信息来设计码率自适应算法。
 
@@ -30,9 +30,9 @@
 	\centering
 	\vspace{10pt}
 	\vspace{10pt}
-	\includegraphics[width = 0.9\linewidth]{clip/08.png}
+	\includegraphics[width = 0.9\linewidth]{figures/live-streaming-transmission.png}
 	\vspace{10pt}
-	\caption{简化的直播系统传输架构\label{fig:08}}
+	\caption{简化的直播系统传输架构\label{fig:live-streaming-transmission}}
 	\vspace{10pt}
 \end{figure}
 
@@ -54,23 +54,23 @@ TCP是一种网络传输层协议，属于互联网协议栈中的重要组成�
 
 由于网络带宽和延迟的抖动，接收方收到数据并不是完全匀速的。在这种情况下，为了保持连续的播放，几乎所有播放器都会设置一个播放缓冲区（PB），它从TRB中获取数据，并按照固定的速率将数据解码并显示。当PB的长度的为0时，视频停止播放直到PB的长度增长到一个固定值。我们称这个值为初始值，并表示为$S_0$。在很多系统中，播放缓冲区都非常有用，它弥补了短时间视频码率和网络带宽的不匹配，有效减少了视频中断的现象。通常情况下，$S_0$就是PB的最大长度。当PB长度达到$S_0$之后，再收到的数据段在接收端将被丢弃。
 
-图\ref{fig:20}展示了接收端的数据曲线。$G(t)$表示在时间$t$之前在内容产生方生成的数据段的数量，因此$G(t) = \mu t$，其中$\mu$是一个常量，表示数据段生成的速率。$A(t)$和$P(t)$表示在接收端接收到和播放的数据段的数量，图中有$S(t) = A(t) - P(t)$。第一个数据段在经过传输延迟$d_t$之后到达接收端，PB开始接收到数据。我们假设在时间$t_0$，第一次使得$S(t_0)=S_0$，开始进行播放。$t_0$可以看做播放延迟，我们表示成$d_p$。因此，存在$S(t) \le \mu (d_p - d_t)$。当$S(t)$减小到$0$，播放终止，直到$S(t)$重新增长到$S_0$。
+图\ref{fig:receiving-data}展示了接收端的数据曲线。$G(t)$表示在时间$t$之前在内容产生方生成的数据段的数量，因此$G(t) = \mu t$，其中$\mu$是一个常量，表示数据段生成的速率。$A(t)$和$P(t)$表示在接收端接收到和播放的数据段的数量，图中有$S(t) = A(t) - P(t)$。第一个数据段在经过传输延迟$d_t$之后到达接收端，PB开始接收到数据。我们假设在时间$t_0$，第一次使得$S(t_0)=S_0$，开始进行播放。$t_0$可以看做播放延迟，我们表示成$d_p$。因此，存在$S(t) \le \mu (d_p - d_t)$。当$S(t)$减小到$0$，播放终止，直到$S(t)$重新增长到$S_0$。
 
 \begin{figure}[t]
 	\centering
 	\vspace{10pt}
 	\vspace{10pt}
-	\includegraphics[width = 0.85\linewidth]{clip/20.png}
+	\includegraphics[width = 0.85\linewidth]{figures/receiving-data.png}
 	\vspace{10pt}
 	\vspace{10pt}
-	\caption{直播系统接收端数据关系\label{fig:20}}
+	\caption{直播系统接收端数据关系\label{fig:receiving-data}}
 	\vspace{10pt}
 	\vspace{10pt}
 \end{figure}
 
 \subsection{多缓冲区模型分析}
 
-如上文所讨论的，在直播传输过程中有四个缓冲区：TCP发送缓冲区（TSB）、TCP接收缓冲区（TRB）、应用层发送缓冲区（ASB）、播放缓冲区（PB），他们组成了多缓冲系统。图\ref{fig:21}显示了多缓冲区模型的结构图，其中$G(t)$、$P(t)$以及$A(t)$的定义与上一小节讨论的相同，$D(t)$表示在时间$t$之前进入TSB的数据段数量。我们使用$S_b(t)$表示在时间$t$存在于缓冲区$b$的数据段的数量，则存在：
+如上文所讨论的，在直播传输过程中有四个缓冲区：TCP发送缓冲区（TSB）、TCP接收缓冲区（TRB）、应用层发送缓冲区（ASB）、播放缓冲区（PB），他们组成了多缓冲系统。图\ref{fig:multi-buffer}显示了多缓冲区模型的结构图，其中$G(t)$、$P(t)$以及$A(t)$的定义与上一小节讨论的相同，$D(t)$表示在时间$t$之前进入TSB的数据段数量。我们使用$S_b(t)$表示在时间$t$存在于缓冲区$b$的数据段的数量，则存在：
 
 \begin{equation}
 \label{eq:mm-1}
@@ -122,8 +122,8 @@ S_{ASB}(t)+S_{PB}(t)=\phi-\alpha=\delta.
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width = 0.9\linewidth]{clip/21.png}
-	\caption{多缓冲区模型结构图\label{fig:21}}
+	\includegraphics[width = 0.9\linewidth]{figures/multi-buffer.png}
+	\caption{多缓冲区模型结构图\label{fig:multi-buffer}}
 	\vspace{10pt}
 	\vspace{10pt}
 \end{figure}
@@ -214,42 +214,42 @@ e(t) = step \times \left \lfloor\dfrac{\varepsilon - \overline{S_{ASB}(t)}}{step
 
 \subsection{实验配置}
 
-为了对基于PID的直播系统内容发送码率自适应方法进行测试，我们实现了一个实际的手机视频直播系统。根据图\ref{fig:07}，这个系统包含三个部分：内容产生方、中转服务器、播放终端。
+为了对基于PID的直播系统内容发送码率自适应方法进行测试，我们实现了一个实际的手机视频直播系统。根据图\ref{fig:live-streaming}，这个系统包含三个部分：内容产生方、中转服务器、播放终端。
 
 我们选择业界已经广泛使用的RTMP协议作为应用层流媒体协议，具体实现采用了第三方开源的代码库librtmp\footnote{http://rtmpdump.mplayerhq.hu/librtmp.3.html}。我们在Android平台上实现了内容产生和上传的程序，其中采用了开源软件x264\footnote{http://www.videolan.org/developers/x264.html}作为视频编码器，并集成了本文提出的码率自适应算法。我们用nginx-rtmp-module\footnote{https://github.com/arut/nginx-rtmp-module}帮助完成了中转服务器的搭建。播放终端采用了开源播放器ffplay\footnote{https://ffmpeg.org/}，它可以播放RTMP协议的流媒体并对播放缓冲区长度进行设置。
 
 \begin{figure}[!t]
 	\centering
 	\vspace{10pt}
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:09-1}\includegraphics[width=0.9\textwidth]{clip/09-1m.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:09-2}\includegraphics[width=0.9\textwidth]{clip/09-2m.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:09-3}\includegraphics[width=0.9\textwidth]{clip/09-3m.png}}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:bitrate-CB}\includegraphics[width=0.9\textwidth]{figures/bitrate-CB.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:bitrate-LTBV}\includegraphics[width=0.9\textwidth]{figures/bitrate-LTBV.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:bitrate-STBV}\includegraphics[width=0.9\textwidth]{figures/bitrate-STBV.png}}
 	\caption{直播系统在不同测试条件下码率随时间变化的情况}
-	\label{fig:09}
+	\label{fig:bitrate}
 \end{figure}
 
 \begin{figure}[!t]
 	\centering
 	\vspace{10pt}
-	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:14-1}\includegraphics[width=0.9\textwidth]{clip/14-1m.png}} \\
-	\subfloat[长周期波动带宽的实验结果]{\label{fig:14-2}\includegraphics[width=0.9\textwidth]{clip/14-2m.png}} \\
-	\subfloat[短周期波动带宽的实验结果]{\label{fig:14-3}\includegraphics[width=0.9\textwidth]{clip/14-3m.png}}
+	\subfloat[1Mbps的固定带宽的实验结果]{\label{fig:playback-CB}\includegraphics[width=0.9\textwidth]{figures/playback-CB.png}} \\
+	\subfloat[长周期波动带宽的实验结果]{\label{fig:playback-LTBV}\includegraphics[width=0.9\textwidth]{figures/playback-LTBV.png}} \\
+	\subfloat[短周期波动带宽的实验结果]{\label{fig:playback-STBV}\includegraphics[width=0.9\textwidth]{figures/playback-STBV.png}}
 	\caption{直播系统在不同测试条件下播放时间占比的变化情况}
-	\label{fig:14}
+	\label{fig:playback}
 \end{figure}
 
 在我们的实验中，我们通过动态改变内容产生方所连接的路由器所允许的最大带宽来模拟出波动的网络状况。视频的采集帧率设置为15 FPS；ASB的最大长度为150，PB最大长度$S_0$为60，过程变量$\overline{S_{ASB}(t)}$的控制目标值$\varepsilon$为15，误差量化步长$step$为5（这些值的单位是数据段的个数，每个数据段为一个视频帧）；改变码率的单位为20kbps，初始码率为500kbps；对过程变量的检查间隔为2秒。我们调节得到的PID控制参数$K_p$、$K_i$和$K_d$分别为0.8，0.13以及0.07。
 
 我们在3种条件下进行了测试：（1）固定带宽（Constant Bandwidth，CB），带宽固定为1Mbps；
-（2）长周期波动带宽（Long-Term Bandwidth Variation，LTBV），带宽每隔40秒变化一次，在200kbps到1.4Mbps之间波动；（3）短周期波动带宽（Short-Term Bandwidth Variation，STBV），在200kbps到1.4Mbps之间随机波动。
+（2）长周期波动带宽（Long-Term Bandwidth Variation， LTBV），带宽每隔40秒变化一次，在200kbps到1.4Mbps之间波动；（3）短周期波动带宽（Short-Term Bandwidth Variation，STBV），在200kbps到1.4Mbps之间随机波动。
 
 \subsection{结果分析}
 
-测试结果参见图\ref{fig:09}、\ref{fig:14}和表\ref{tab:live-bandwidth}、\ref{tab:live-playtime}。由于移动设备上的UGC视频直播应用刚兴起不久，我们暂未发现有针对这一传输模式的研究工作可供对比。因此，在实验中我们只与不进行码率调整的系统进行了比较。
+测试结果参见图\ref{fig:bitrate}、\ref{fig:playback}和表\ref{tab:live-bandwidth}、\ref{tab:live-playtime}。由于移动设备上的UGC视频直播应用刚兴起不久，我们暂未发现有针对这一传输模式的研究工作可供对比。因此，在实验中我们只与不进行码率调整的系统进行了比较。
 
-从图\ref{fig:09-1}中可以看出，我们提出的自适应方法使得码率在35秒以内保持上升，直到趋近带宽。从图\ref{fig:09-2}和\ref{fig:09-3}可以看出，通过PID自适应算法的调整，在一个合理的延迟之内，码率和波动的带宽基本保持同步，而且系统对带宽的频繁变化进行了一定的平滑。如表\ref{tab:live-bandwidth}所示，码率不进行调整时带宽占用率较低，而我们提出的算法对于条件（1）、（2）和（3）分别将带宽占用率提高到92.1\%、88.9\%以及87.1\%。
+从图\ref{fig:bitrate-CB}中可以看出，我们提出的自适应方法使得码率在35秒以内保持上升，直到趋近带宽。从图\ref{fig:bitrate-LTBV}和\ref{fig:bitrate-STBV}可以看出，通过PID自适应算法的调整，在一个合理的延迟之内，码率和波动的带宽基本保持同步，而且系统对带宽的频繁变化进行了一定的平滑。如表\ref{tab:live-bandwidth}所示，码率不进行调整时带宽占用率较低，而我们提出的算法对于条件（1）、（2）和（3）分别将带宽占用率提高到92.1\%、88.9\%以及87.1\%。
 
-从图\ref{fig:14-1}可以看出，在带宽固定的情况下，对于进行自适应码率调整和未进行码率调整的视频流，播放基本都是连续的。但从图\ref{fig:14-2}和\ref{fig:14-3}可以看出，未进行码率调整的视频流的播放过程被频繁地中断，而进行码率调整的视频流的播放过程在大部分时间是连续的。如表\ref{tab:live-playtime}所示，我们所提出的方法对于条件（2）和（3）分别将播放时间占比提高到97.3\%和96.1\%，因此显著提高了播放连续性。
+从图\ref{fig:playback-CB}可以看出，在带宽固定的情况下，对于进行自适应码率调整和未进行码率调整的视频流，播放基本都是连续的。但从图\ref{fig:playback-LTBV}和\ref{fig:playback-STBV}可以看出，未进行码率调整的视频流的播放过程被频繁地中断，而进行码率调整的视频流的播放过程在大部分时间是连续的。如表\ref{tab:live-playtime}所示，我们所提出的方法对于条件（2）和（3）分别将播放时间占比提高到97.3\%和96.1\%，因此显著提高了播放连续性。
 
 总之，加入PID码率自适应算法比不进行码率调整的直播效果有所改善。
 

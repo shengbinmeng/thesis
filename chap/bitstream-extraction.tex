@@ -39,7 +39,7 @@ s_{I_2} = {\rm\bf M} \cdot s_{I_2} + {\rm\bf T}_{B} \cdot c_{B} + \Big( \sum_{i 
 \begin{figure}[t]
 	\centering
 	\vspace{10pt}
-	\includegraphics[width = 0.5\linewidth]{figures/Subset.jpg}
+	\includegraphics[width = 0.5\linewidth]{figures/subset.jpg}
 	\vspace{10pt}
 	\caption{增强层数据包集合关系示例 \label{fig:subset}}
 \end{figure}
@@ -81,13 +81,13 @@ e = e_x + e_y + e_z.
 \begin{figure}[h]
 \centering
 \vspace{10pt}
-\includegraphics[width = 1.0\linewidth]{figures/GOP-Structure.png}
-\caption{SVC码流中的图像组（GOP）结构示例 \label{fig:GOP_Structure}}
+\includegraphics[width = 1.0\linewidth]{figures/GOP-structure.png}
+\caption{SVC码流中的图像组（GOP）结构示例 \label{fig:GOP-structure}}
 \end{figure}
 
-为了减少解码次数，我们将所有的增强层数据包分成若干组，使得每一组中的多个误差向量能在一次解码中同时获取。考虑如图\ref{fig:GOP_Structure}所示具有8帧图像组结构的一个视频码流。在该图中，基本层数据包是黑色的，增强层数据包按照颜色分为了几个组（相同颜色的属于同一组）。在每一组中，增强层数据包的误差向量可以同时计算，因为这些数据包所影响的像素是互不干扰的。例如，丢弃8号数据包只会在帧1、2、3中带来像素误差，而丢弃10号数据包只会在帧5、6、7中带来像素误差（帧的编号从0开始）。因此，我们可以只通过一次相减来同时得到8号和10号数据包的误差向量$e_{8}$和$e_{10}$，以及所有其他GOP中的相同位置数据包（用相同颜色表示它们属于同一组）的误差向量。应该指出，这些误差向量是非常稀疏的，因为丢弃单个数据包带来的失真影响非常有限。
+为了减少解码次数，我们将所有的增强层数据包分成若干组，使得每一组中的多个误差向量能在一次解码中同时获取。考虑如图\ref{fig:GOP-structure}所示具有8帧图像组结构的一个视频码流。在该图中，基本层数据包是黑色的，增强层数据包按照颜色分为了几个组（相同颜色的属于同一组）。在每一组中，增强层数据包的误差向量可以同时计算，因为这些数据包所影响的像素是互不干扰的。例如，丢弃8号数据包只会在帧1、2、3中带来像素误差，而丢弃10号数据包只会在帧5、6、7中带来像素误差（帧的编号从0开始）。因此，我们可以只通过一次相减来同时得到8号和10号数据包的误差向量$e_{8}$和$e_{10}$，以及所有其他GOP中的相同位置数据包（用相同颜色表示它们属于同一组）的误差向量。应该指出，这些误差向量是非常稀疏的，因为丢弃单个数据包带来的失真影响非常有限。
 
-为了获取所有的误差向量，所需的解码次数大约等于增强层的层数$(L_Q - 1)$乘以时间层的层数$L_T$。对于图\ref{fig:GOP_Structure}中的例子而言，$L_Q = 3$，$L_T = 4$，所以所需的解码次数照此计算将会是$(3 - 1) \times 4 = 8$。然而，我们还需要额外的$L_Q - 1 = 2$次解码，来分离“关键帧”\supercite{H.264-Overview}（图\ref{fig:GOP_Structure}中的帧0、8、16）中数据包的失真影响。关键帧中增强层数据包的丢弃将会给它两边相邻的两个GOP都带来失真。例如，丢弃4号数据包带来的失真影响范围将会从帧1直到帧15，从而与帧0和帧16中的数据包的失真影响互相交叠。因此，关键帧同一位置的增强层数据包（2、4、20号数据包）应该被分为两个组：一组包含偶数GOP的关键帧数据包（2和20号包），另一组包含奇数GOP的（4号包）。于是，误差向量获取真正所需要的解码次数应为：
+为了获取所有的误差向量，所需的解码次数大约等于增强层的层数$(L_Q - 1)$乘以时间层的层数$L_T$。对于图\ref{fig:GOP-structure}中的例子而言，$L_Q = 3$，$L_T = 4$，所以所需的解码次数照此计算将会是$(3 - 1) \times 4 = 8$。然而，我们还需要额外的$L_Q - 1 = 2$次解码，来分离“关键帧”\supercite{H.264-Overview}（图\ref{fig:GOP-structure}中的帧0、8、16）中数据包的失真影响。关键帧中增强层数据包的丢弃将会给它两边相邻的两个GOP都带来失真。例如，丢弃4号数据包带来的失真影响范围将会从帧1直到帧15，从而与帧0和帧16中的数据包的失真影响互相交叠。因此，关键帧同一位置的增强层数据包（2、4、20号数据包）应该被分为两个组：一组包含偶数GOP的关键帧数据包（2和20号包），另一组包含奇数GOP的（4号包）。于是，误差向量获取真正所需要的解码次数应为：
 \begin{equation}
 \vspace{10pt}
 N = (L_Q - 1) \cdot (L_T + 1).
@@ -108,17 +108,17 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 \end{equation}
 这个公式中$e_{full}$表示全部增强层数据包都参与解码得到的视频序列与原始序列之间的差值。这是编解码过程固有的失真，在一个数据包都不丢弃的时候也是存在的。
 
-在采用基于线性误差模型的失真估计之前，我们先做实验验证一下其准确性。该实验中的码流都是用JSVM编码器压缩得到的，编码采用了如图\ref{fig:GOP_Structure}所示的GOP结构，熵编码过程配置的是CABAC。每个码流基本层和增强层的QP分别为33和27。增强层通过配置Medium Grain Scalability (MGS)向量进一步划分为了2个MGS层，分别包含4个和12个变换系数。我们从码流中随机丢弃一组数据包，将得到的子流解码，然后比较实际的失真与通过线性误差模型估计的失真。解码用的是JSVM解码器，其他计算都通过MATLAB进行。
+在采用基于线性误差模型的失真估计之前，我们先做实验验证一下其准确性。该实验中的码流都是用JSVM编码器压缩得到的，编码采用了如图\ref{fig:GOP-structure}所示的GOP结构，熵编码过程配置的是CABAC。每个码流基本层和增强层的QP分别为33和27。增强层通过配置Medium Grain Scalability (MGS)向量进一步划分为了2个MGS层，分别包含4个和12个变换系数。我们从码流中随机丢弃一组数据包，将得到的子流解码，然后比较实际的失真与通过线性误差模型估计的失真。解码用的是JSVM解码器，其他计算都通过MATLAB进行。
 
-对于序列{\em Bus}、{\em Foreman}、{\em Soccer}，图\ref{fig:model_verification}分别给出了其中一个比较结果（为简单起见，只采用了前33帧）。图中的横轴代表帧序号，纵轴表示以MSE度量的失真。实线代表真实计算的失真，虚线代表用所提出的线性误差模型估计的失真。可以看到虚线和实线非常接近，验证了用提出的模型做失真估计的准确性。我们对所有8个SVC标准序列都进行了实验，定量计算了估计误差，如表\ref{tab:estimation-error}所示。可以看到，平均估计误差只有5\%，进一步说明了模型的准确性。
+对于序列{\em Bus}、{\em Foreman}、{\em Soccer}，图\ref{fig:model-verification}分别给出了其中一个比较结果（为简单起见，只采用了前33帧）。图中的横轴代表帧序号，纵轴表示以MSE度量的失真。实线代表真实计算的失真，虚线代表用所提出的线性误差模型估计的失真。可以看到虚线和实线非常接近，验证了用提出的模型做失真估计的准确性。我们对所有8个SVC标准序列都进行了实验，定量计算了估计误差，如表\ref{tab:estimation-error}所示。可以看到，平均估计误差只有5\%，进一步说明了模型的准确性。
 
 
 \begin{figure}[!ht]
 	\centering
-	\subfloat[{\em Bus}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Bus.png}} \\
-	\subfloat[{\em Foreman}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Foreman.png}} \\
-	\subfloat[{\em Soccer}]{\includegraphics[width=0.7\textwidth]{clip/model-verify-Soccer.png}} \\
-	\caption{不同序列估计失真与实际失真的比较 \label{fig:model_verification}}
+	\subfloat[{\em Bus}]{\includegraphics[width=0.7\textwidth]{figures/model-verify-Bus.png}} \\
+	\subfloat[{\em Foreman}]{\includegraphics[width=0.7\textwidth]{figures/model-verify-Foreman.png}} \\
+	\subfloat[{\em Soccer}]{\includegraphics[width=0.7\textwidth]{figures/model-verify-Soccer.png}} \\
+	\caption{不同序列估计失真与实际失真的比较 \label{fig:model-verification}}
 \end{figure}
 
 \begin{table}[h]

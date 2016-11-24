@@ -12,15 +12,15 @@ PID控制器的控制输出一般如下定义：
 \label{eq:pid-output}
 u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \frac{d}{{dt}}e(t) \: ,
 \end{equation}
-其中$e(t)$指代过程变量与控制目标在时刻$t$的误差，$K_p$、$K_i$、$K_d$是三个可调参数，依次称为比例增益、积分增益和微分增益。公式(\ref{eq:pid-output})的结果通过某种方式来影响系统状态，使得过程变量朝着控制目标变化，如图\ref{fig:18}\footnote{http://en.wikipedia.org/wiki/PID\_controller}所示。在PID控制器中，比例部分直接对应着当前系统误差，积分部分反映了过去一段时间内误差的累积，微分部分则表示对误差变化情况的预测。将这三个部分结合起来作为控制器输出，能够使系统综合考虑过去、现在和未来的状态，更好地进行调整决策。
+其中$e(t)$指代过程变量与控制目标在时刻$t$的误差，$K_p$、$K_i$、$K_d$是三个可调参数，依次称为比例增益、积分增益和微分增益。公式(\ref{eq:pid-output})的结果通过某种方式来影响系统状态，使得过程变量朝着控制目标变化，如图\ref{fig:pid-controller}\footnote{http://en.wikipedia.org/wiki/PID\_controller}所示。在PID控制器中，比例部分直接对应着当前系统误差，积分部分反映了过去一段时间内误差的累积，微分部分则表示对误差变化情况的预测。将这三个部分结合起来作为控制器输出，能够使系统综合考虑过去、现在和未来的状态，更好地进行调整决策。
 
 \begin{figure}[h]
 	\centering
 	\vspace{10pt}
 	\vspace{10pt}
-	\includegraphics[width = 0.7\linewidth]{clip/18.png}
+	\includegraphics[width = 0.7\linewidth]{figures/pid-controller.png}
 	\vspace{10pt}
-	\caption{PID控制器原理示意图\label{fig:18}}
+	\caption{PID控制器原理示意图\label{fig:pid-controller}}
 \end{figure}
 
 作为一个灵活有效的控制技术，PID可以被用来解决各种各样的控制问题，例如视频编码过程中的码率控制\supercite{Li1999,Wong2004,Shen2009,Yang2010,Zhou2011}。在本文的工作中，我们基于它设计了一个码率自适应算法，用来控制视频流媒体中的视频质量。
@@ -40,7 +40,7 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 \begin{figure}[t]
 	\vspace{10pt}
 	\centering
-	\includegraphics[width = 0.6\linewidth]{figures/Intervals.png}
+	\includegraphics[width = 0.6\linewidth]{figures/intervals.png}
 	\vspace{10pt}
 	\caption{达尔文流媒体服务器中的两个时间线 \label{fig:intervals}}
 \end{figure}
@@ -142,14 +142,14 @@ long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}
 	\centering
 	\vspace{10pt}
 	\vspace{10pt}
-	\subfloat[]{\label{fig:19-1}\includegraphics[width=0.75\textwidth]{clip/19-1.png}} \\
+	\subfloat[]{\label{fig:ki-tuning}\includegraphics[width=0.75\textwidth]{figures/ki-tuning.png}} \\
 	\vspace{10pt}
-	\subfloat[]{\label{fig:19-2}\includegraphics[width=0.75\textwidth]{clip/19-2.png}}
+	\subfloat[]{\label{fig:kd-tuning}\includegraphics[width=0.75\textwidth]{figures/kd-tuning.png}}
 	\caption{PID控制器中参数$K_i$、$K_d$对系统的影响}
-	\label{fig:19}
+	\label{fig:pid-tuning}
 \end{figure}
 
-与工业界的其他PID控制系统一样，本文提出的算法中三个参数的选取也是跟具体实现相关的。大多数情况下，为取得最优的效果，需要手动试错调节。每个参数对系统的不同方面产生影响，知道这些影响有助于进行参数选取。一般来说，PID控制器中的比例部分会影响系统的稳定性。如果比例增益$K_p$过高，系统容易变得不稳定。但是，太低的$K_p$又会导致过长的上升时间，使系统响应迟缓。积分部分除了能消除稳态误差，还能加速过程变量向控制目标的变化。这意味着，增大$K_i$能减小上升时间，提高系统的响应速度。但是，积分部分会累积过去一段时间的误差，使过程变量容易超出目标值（即超调），因此过大的$K_i$也会导致系统不稳定。上述这些隐患都能通过微分部分来校正。微分部分通过预测系统行为，具有减小超调、提高稳定性的双重效果。但是微分部分的特点是对误差非常敏感，也正是因为此，工业实践中微分增益$K_d$通常都设置的比较低。参数$K_i$、$K_d$对系统的影响效果可以参见图\ref{fig:19}\footnote{http://en.wikipedia.org/wiki/PID\_controller}。
+与工业界的其他PID控制系统一样，本文提出的算法中三个参数的选取也是跟具体实现相关的。大多数情况下，为取得最优的效果，需要手动试错调节。每个参数对系统的不同方面产生影响，知道这些影响有助于进行参数选取。一般来说，PID控制器中的比例部分会影响系统的稳定性。如果比例增益$K_p$过高，系统容易变得不稳定。但是，太低的$K_p$又会导致过长的上升时间，使系统响应迟缓。积分部分除了能消除稳态误差，还能加速过程变量向控制目标的变化。这意味着，增大$K_i$能减小上升时间，提高系统的响应速度。但是，积分部分会累积过去一段时间的误差，使过程变量容易超出目标值（即超调），因此过大的$K_i$也会导致系统不稳定。上述这些隐患都能通过微分部分来校正。微分部分通过预测系统行为，具有减小超调、提高稳定性的双重效果。但是微分部分的特点是对误差非常敏感，也正是因为此，工业实践中微分增益$K_d$通常都设置的比较低。参数$K_i$、$K_d$对系统的影响效果可以参见图\ref{fig:pid-tuning}\footnote{http://en.wikipedia.org/wiki/PID\_controller}。
 
 本文采用了经典的Ziegler--Nichols方法\supercite{Ziegler1942}来进行参数选取。该方法首先把积分和微分参数设为0，调节比例参数$K_p$到系统开始震荡时的值$K_u$，假设震荡周期为$T_u$，则按照以下公式设置三个参数：
 \begin{equation}
@@ -199,11 +199,11 @@ K_d = K_u \cdot T_u/8.
 	\vspace{10pt}
 	\vspace{10pt}
 	\subfloat[不同质量控制算法的质量等级均值]{
-		\includegraphics[width=0.8\textwidth]{figures/Quality-all.png}
+		\includegraphics[width=0.8\textwidth]{figures/quality-all.png}
 		\label{fig:quality-all}} \\
 	\vspace{10pt}
 	\subfloat[不同质量控制算法的质量等级方差]{
-		\includegraphics[width=0.8\textwidth]{figures/Variance-all.png}
+		\includegraphics[width=0.8\textwidth]{figures/variance-all.png}
 		\label{fig:variance-all}}
 	\vspace{10pt}
 	\vspace{10pt}
@@ -218,11 +218,11 @@ K_d = K_u \cdot T_u/8.
 	\vspace{10pt}
 	\vspace{10pt}
 	\subfloat[PID和PDF算法的质量等级均值]{
-		\includegraphics[width=0.8\textwidth]{figures/Quality-two.png}
+		\includegraphics[width=0.8\textwidth]{figures/quality-two.png}
 		\label{fig:quality-two}} \\
 	\vspace{10pt}
 	\subfloat[PID和PDF算法的质量等级方差]{
-		\includegraphics[width=0.8\textwidth]{figures/Variance-two.png}
+		\includegraphics[width=0.8\textwidth]{figures/variance-two.png}
 		\label{fig:variance-two}}
 	\vspace{10pt}
 	\vspace{10pt}
@@ -240,7 +240,7 @@ K_d = K_u \cdot T_u/8.
 \begin{figure}[!h]
 	\centering
 	\vspace{10pt}
-	\includegraphics[width = 0.8\linewidth]{figures/Fluctuation.png}
+	\includegraphics[width = 0.8\linewidth]{figures/fluctuation.png}
 	\caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
 \end{figure}
 
@@ -265,24 +265,24 @@ K_d = K_u \cdot T_u/8.
 上面的实验直接用可伸缩视频中内置的伸缩层来构造质量等级，并没有结合本文前一章中提出的码流截取算法。实际的可伸缩视频流媒体系统中，当码率自适应算法给出一个适合传输的码率后，由码流截取方案根据这一码率限制截取出一个子流向客户端发送。本小节展示将本文提出的码流截取算法与码率自适应算法相结合的系统运行效果。
 
 我们的比较对象是采用其内置的包延迟反馈算法和JSVM基本码流截取方案的达尔文流媒体服务器。比较结果如图\ref{fig:fluctuation-psnr}所示。其中展示了带宽在400kbps、600kbps、800kbps
-和1000kbps附近波动时，所发送视频流的PSNR变化情况。可以看到，采用本文算法的系统性能要好于比较对象，体现在以下两个方面：第一，成功避免了不必要的质量下降，例如图\ref{fig:Fluctuation-PSNR3}的350秒处和图\ref{fig:Fluctuation-PSNR4}的150秒处；第二，能够维持一个相对更高的PSNR值，例如图\ref{fig:Fluctuation-PSNR1}的450秒附近和图\ref{fig:Fluctuation-PSNR2}的500秒附近。
+和1000kbps附近波动时，所发送视频流的PSNR变化情况。可以看到，采用本文算法的系统性能要好于比较对象，体现在以下两个方面：第一，成功避免了不必要的质量下降，例如图\ref{fig:fluctuation-PSNR3}的350秒处和图\ref{fig:fluctuation-PSNR4}的150秒处；第二，能够维持一个相对更高的PSNR值，例如图\ref{fig:fluctuation-PSNR1}的450秒附近和图\ref{fig:fluctuation-PSNR2}的500秒附近。
 
 整个时间过程中的PSNR均值和方差在表\ref{tab:improvement-combined}中列出，定量地证明了本文算法的优越性。例如，当带宽在800kbps附近波动时，采用本文算法的系统所传送视频的PSNR平均值为38.75dB，比比较对象高了0.83个dB，同时PSNR方差也由1.24降低到了0.69，意味着视频质量平滑性也更好。
 
 \begin{figure*}[!ht]
 	\centering
 	\subfloat[带宽在400kbps附近波动]{
-		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR1.png}
-		\label{fig:Fluctuation-PSNR1}} \\
+		\includegraphics[width=0.50\textwidth]{figures/fluctuation-PSNR1.png}
+		\label{fig:fluctuation-PSNR1}} \\
 	\subfloat[带宽在600kbps附近波动]{
-		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR2.png}
-		\label{fig:Fluctuation-PSNR2}} \\
+		\includegraphics[width=0.50\textwidth]{figures/fluctuation-PSNR2.png}
+		\label{fig:fluctuation-PSNR2}} \\
 	\subfloat[带宽在800kbps附近波动]{
-		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR3.png}
-		\label{fig:Fluctuation-PSNR3}} \\
+		\includegraphics[width=0.50\textwidth]{figures/fluctuation-PSNR3.png}
+		\label{fig:fluctuation-PSNR3}} \\
 	\subfloat[带宽在1000kbps附近波动]{
-		\includegraphics[width=0.50\textwidth]{figures/Fluctuation-PSNR4.png}
-		\label{fig:Fluctuation-PSNR4}}
+		\includegraphics[width=0.50\textwidth]{figures/fluctuation-PSNR4.png}
+		\label{fig:fluctuation-PSNR4}}
 	\caption{不同流媒体系统所发送视频的PSNR随时间的变化情况
 		\label{fig:fluctuation-psnr}}
 \end{figure*}
