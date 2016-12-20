@@ -29,12 +29,10 @@
 
 \begin{figure}[t]
 	\centering
-	\vspace{10pt}
 	\includegraphics[width = 1.0\linewidth]{eps/research-framework}
 	\caption{视频流媒体研究框架 \label{fig:research-framework}}
 \end{figure}
 
-\vspace{10pt}
 在这一研究框架中，自适应视频流媒体主要涉及的是数据源端提供可变码率、传输过程中自动适应带宽这两个方面。虽然其他方面的研究工作，例如对编码效率的提升、对网络架构和协议的改进、在用户终端的解码优化等，也非常重要，但本文主要关注的是上述与自适应性相关的两个方面。
 
 在视频流媒体系统中支持视频码率的可变性通常有两种选择。第一种选择是采取多码流的方法。多码流方法的原理很简单，就是预先编好不同码率的多个码流存放在服务器上，根据网络情况选取其中合适的一个进行传送。近年来兴起的HTTP动态自适应流媒体（Dynamic Adaptive Streaming over HTTP,  DASH）\supercite{Sodagar2011}就属于这类方法。如图\ref{fig:DASH}所示，DASH系统在服务器端提供不同码率的多个码流切片，客户端通过HTTP协议拉取数据，在某个时间段内可以选择性地接收这几个码流中任何一个的切片，通过在多个码流之间切换来更改码率以适应带宽波动。此外，有的系统会在服务器上将预先编好的一个高码率码流实时转码成不同低码率的码流，这本质上也属于多码流的方法。
@@ -43,7 +41,6 @@
 
 \begin{figure}[t]
 	\centering
-	\vspace{10pt}
 	\includegraphics[width = 1.0\linewidth]{eps/DASH}
 	\caption{DASH系统的工作原理示意图\label{fig:DASH}}
 \end{figure}
@@ -52,20 +49,14 @@
 
 \begin{figure}[t]
 	\centering
-	\vspace{10pt}
 	\includegraphics[width = 1.0\linewidth]{figures/youtube.png}
-	\vspace{10pt}
 	\caption{YouTube视频码率自适应功能图示\label{fig:youtube}}
-	\vspace{10pt}
 \end{figure}
 
 \begin{figure}[t]
 	\centering
-	\vspace{10pt}
 	\includegraphics[width = 1.0\linewidth]{figures/youku.png}
-	\vspace{10pt}
 	\caption{优酷网视频码率自适应功能图示\label{fig:youku}}
-	\vspace{10pt}
 \end{figure}
 
 从图\ref{fig:research-framework}所示的研究框架中可以看出，采用可伸缩视频编码或是采用DASH之类的多码流方案，其区别只在于数据源端提供可变码率的方式不同。当可伸缩视频作为数据源时，在给定码率下选择丢弃哪些数据包，即如何最优地从整个码流中截取出一个子流用于发送是需要研究的问题之一。多码流作为数据源时则不存在这个问题。而对于在传输过程中如何自动调整码率以适应带宽的变化，却是二者共有的问题。这些问题的解决，是提高视频流媒体服务质量和用户体验的关键。
