@@ -8,7 +8,6 @@ PID控制器是一个在工业控制系统中常用的闭环反馈控制器。PI
 
 PID控制器的控制输出一般如下定义：
 \begin{equation}
-\vspace{10pt}
 \label{eq:pid-output}
 u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \frac{d}{{dt}}e(t) \: ,
 \end{equation}
@@ -16,10 +15,7 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 
 \begin{figure}[h]
 	\centering
-	\vspace{10pt}
-	\vspace{10pt}
 	\includegraphics[width = 0.7\linewidth]{figures/pid-controller.png}
-	\vspace{10pt}
 	\caption{PID控制器原理示意图\label{fig:pid-controller}}
 \end{figure}
 
@@ -38,10 +34,8 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 本章所提出的质量控制算法主要是针对达尔文流媒体服务器的视频传输过程，所选取的过程变量称为“实际与检测间隔比”。下面介绍其具体定义。
 
 \begin{figure}[t]
-	\vspace{10pt}
 	\centering
 	\includegraphics[width = 0.6\linewidth]{figures/intervals.png}
-	\vspace{10pt}
 	\caption{达尔文流媒体服务器中的两个时间线 \label{fig:intervals}}
 \end{figure}
 
@@ -61,37 +55,31 @@ u(t) = {K_p} \cdot e(t) + {K_i} \cdot \int_0^t {e(\tau )d\tau }  + {K_d} \cdot \
 在通常的PID控制器中，控制输出是用过程变量与控制目标之间的差值进行比例、积分、微分求取出来的。考虑到我们所选的过程变量是一个比例，且控制目标是1，本文对通常的PID控制器做了修改，提出了一个基于比例的模型。在这个模型中，过程变量直接被用来计算控制器输出，而且所有求差的运算都被适当的改为了求比例的运算，以保持模型的合理正确性，如下所示：
 
 \begin{equation}
-\vspace{10pt}
 \label{eq:ut}
 {u_t} = {K_p} \cdot E_p^t + {K_i} \cdot E_i^t + {K_d} \cdot E_d^t ,
 \end{equation}
 
 \begin{equation}
-\vspace{10pt}
 \label{eq:ep}
 E_p^t = \frac{{actual\_interva{l_t}}}{{check\_interva{l_t}}} ,
 \end{equation}
 
 \begin{equation}
-\vspace{10pt}
 \label{eq:ei}
 E_i^t = \frac{{long\_actual\_interva{l_t}}}{{long\_check\_interva{l_t}}} ,
 \end{equation}
 
 \begin{equation}
-\vspace{10pt}
 \label{eq:ed}
 E_d^t = E_p^t/E_p^{t - 1} ,
 \end{equation}
 
 \begin{equation}
-\vspace{10pt}
 \label{eq:long-actual}
 long\_actual\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {actual\_interva{l_\tau}} ,
 \end{equation}
 
 \begin{equation}
-\vspace{10pt}
 \label{eq:long-check}
 long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}} .
 \end{equation}
@@ -105,15 +93,11 @@ long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}
 本文提出的码率自适应算法描述如Algorithm\ref{algo:control}所示。相比于其他的调度策略，这个基于PID的自适应算法具有以下几个优点：
 \begin{itemize}
 	\item 首先，该算法不仅仅依据当前状态或者固定时间点的信息来做决策，因此质量调整可以在任何合适的时间发生。
-	\vspace{10pt}
 	\item 其次，因为PID模型（微分部分）在某种程度上考虑了对未来的预测，该算法能够判断带宽在未来一段时间内是否会变得足够大或足够小，因此能避免一些不必要的调整。
-	\vspace{10pt}
 	\item 最后，该算法并不一定一次只调整一个质量等级，这就使得当带宽剧烈下降时能够快速下调质量以保证流畅播放，而当系统启动时能够快速上调质量以使用户尽早收到更清晰的视频。
-	\vspace{10pt}
 \end{itemize}
 
 \begin{algorithm}
-	\vspace{10pt}
 	\caption{基于PID的码率自适应算法}
 	\label{algo:control}
 	\begin{algorithmic}
@@ -133,7 +117,6 @@ long\_check\_interva{l_t} = \sum\limits_{\tau = {T_l}}^t {check\_interva{l_\tau}
 		\ENDIF
 		\STATE 根据新的质量等级发送数据包
 	\end{algorithmic}
-	\vspace{10pt}
 \end{algorithm}
 
 \subsection{参数选取与调优}
@@ -174,8 +157,6 @@ K_d = K_u \cdot T_u/8.
 
 \begin{table*}[t]
 	\centering
-	\vspace{10pt}
-	\vspace{10pt}
 	\caption{质量等级定义中组ID与层ID的对应关系}
 	\label{tab:sub-stream}
 	\begin{tabular}{c|*{8}{p{1.0cm}<{\centering}|}{p{1.0cm}<{\centering}}}
@@ -184,7 +165,6 @@ K_d = K_u \cdot T_u/8.
 		质量层ID  & 0 & 0 & 0 & 1 & 1 & 1 & 2 & 2 & 2 \\ \hline
 		时间层ID & 0 & 1 & 2 & 0 & 1 & 2 & 0 & 1 & 2 \\ \hline
 	\end{tabular}
-	\vspace{10pt}
 \end{table*}
 
 在我们的实验中用限速软件NetLimiter\footnote{http://www.netlimiter.com/}来模拟实际网络环境中的带宽情况。平均带宽的取值从400kbps到1400kbps，以100kbps的间隔递增。对于每个平均带宽值，通过在平均值基础上加随机干扰来模拟带宽波动。在带宽波动的情况下，流媒体系统在每种质量控制算法下各运行10分钟，并记录所发送的质量等级变化。所有质量等级的平均值作为视频质量的度量，而所有质量等级的方差作为质量平滑性的度量。这两个指标被用于不同算法的比较。比较中的基准算法是达尔文流媒体服务器中内置的包延迟反馈（Packet Delay Feedback，PDF）算法。
@@ -237,13 +217,6 @@ K_d = K_u \cdot T_u/8.
 
 表\ref{tab:improvement}列出了四种控制算法的定量比较数据，从中我们可以看出PID算法相比其他几种算法有明显的优势。与基准算法PDF相比，基于PID的质量控制算法取得了8.6\%的视频质量提升，同时将质量波动也降低了24.8\%。当带宽在平均值800kbps附近波动的时候，四种控制算法对应的视频质量等级变化情况如图\ref{fig:fluctuation}所示。从中我们可以明显观察到PID控制算法得到的视频质量更加平稳。
 
-\begin{figure}[!h]
-	\centering
-	\vspace{10pt}
-	\includegraphics[width = 0.8\linewidth]{figures/fluctuation.png}
-	\caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
-\end{figure}
-
 \begin{table*}[!h]
 	\centering
 	\vspace{10pt}
@@ -259,6 +232,13 @@ K_d = K_u \cdot T_u/8.
 	\end{tabular}
 	\vspace{10pt}
 \end{table*}
+
+\begin{figure}[!h]
+	\centering
+	\vspace{10pt}
+	\includegraphics[width = 0.8\linewidth]{figures/fluctuation.png}
+	\caption{不同质量控制算法下视频质量等级随时间的变化情况 \label{fig:fluctuation}}
+\end{figure}
 
 \subsection{与码流截取相结合的效果}
 
