@@ -322,7 +322,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 
 为了进一步证明本文提出的码流截取方案在无参考情况下的有效性，我们除了与JSVM对比，还做了进一步的对比实验。比较对象一方面选了Maani等人的方法\supercite{Maani2009}，另一方面选了不进行本文\ref{subsec:noref}小节中的修改而直接采用公式(\ref{eq:R-D_impact_i})的方法。由于Maani等人的方法所取得的结果取决于其训练出的模型参数，为了公平起见，我们控制了训练过程的计算量，使其与我们的方法计算复杂度相同。表\ref{tab:methods-compare}列出了三种不同的无参考截取方法相对于JSVM QL的平均PSNR提升。可以看出，Maani等人的方法在无参考情况下跟本文的方法性能相差无几，而在进行本文\ref{subsec:noref}小节中的修改之前，直接采用公式(\ref{eq:R-D_impact_i})则性能差了许多，甚至在有些序列上取得了比JSVM QL还差的结果。这进一步说明了\ref{subsec:noref}小节中修改的重要性。
 
-\begin{table*}[!ht]
+\begin{table*}[t]
 	\centering
 	\caption{无参考源时本文提出的截取方案相比于JSVM的PSNR提升}
 	\label{tab:extraction-gain-noref}
@@ -348,7 +348,7 @@ e(I_x) = e_{full} + \sum_{i \in {I_x}} e_i \: .
 	\end{minipage}
 \end{table*}
 
-\begin{table*}[!ht]
+\begin{table*}[t]
 	\centering
 	\caption{不同的无参考截取方法对比：相对于JSVM QL的平均PSNR提升}
 	\label{tab:methods-compare}
