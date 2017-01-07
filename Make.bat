@@ -28,7 +28,7 @@ goto end
 
 :clean
 del *.aux *.bbl *.bcf *.blg *.dvi *.lof *.log *.lot *.run.xml *.toc *.out
-del missfont.log chap\*.aux eps\*.pdf
+del chap\*.aux eps\*.pdf
 goto end
 
 :usage
